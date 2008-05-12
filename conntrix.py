@@ -17,12 +17,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 """
 
-from visual import *
+import visual
 from random import uniform, randint
 
 import pg
 import sys
-
 
 CONN_COUNT = 40
 COLOR = (0.5,0.5,1)
@@ -33,51 +32,70 @@ BOX_COLOR = (0.5,0.5,0.5)
 RADIUS = 2
 BORDER = 0.2
 
-def select_data():
-  pgcnx = pg.connect('ulog2', 'localhost', 5432, None, None, 'ulog2', 'ulog2')
-  connlist = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_sec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen FROM ulog2_ct  where flow_end_sec IS NOT NULL ORDER BY flow_start_sec ASC LIMIT %s" % (CONN_COUNT)).getresult()
-  return connlist
+class connection(visual.cylinder):
+    """
+    Store information about a connection and related object.
+    """
+
+    def __init__(self, start, end, **kargs):
+        visual.cylinder.__init__(self, **kargs)
+	self.pos = (start,0, 0)
+	self.color = self.icolor = COLOR
+	self.radius = RADIUS
+	self.axis = (end - start,0,0)
+	self.label = "None"
+   
+    def ordonate(self, index):
+        self.z = (3*RADIUS)*index
+	self.label.z = (3*RADIUS)*index
+    
+    def set_label(self, ip_dest, port_dest, bytes_in, bytes_out):
+        self.label = visual.label(pos=self.pos, xoffset = 10, yoffset = 10,  text='%s:%d\n%d/%d bits\n%f sec' % (ip_dest, port_dest, bytes_in, bytes_out, self.axis.x))
+        self.label.visible = 0
+	self.set_port(port_dest)
+
+    # FIXME: has to be improved
+    def set_port(self, port):
+        self.dport = port
+
+class connections(list):
+    """
+    Connections list with visual elements
+    """
+
+    def from_pgsql(self, count, **kargs):
+        pgcnx = pg.connect('ulog2', 'localhost', 5432, None, None, 'ulog2', 'ulog2')
+        conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_sec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen FROM ulog2_ct  where flow_end_sec IS NOT NULL ORDER BY flow_start_sec ASC LIMIT %s" % (count)).getresult()
+	t = 0
+	self.count = count
+	for elt in conns:
+	    conn = connection(elt[0]-conns[0][0], elt[1]-conns[0][0])
+	    conn.set_label(elt[2], elt[3], elt[4], elt[5])
+	    conn.ordonate(t)
+	    self.append(conn)
+	    t += 1
+
+    def length(self):
+	    return max(self).axis.x+max(self).pos.x
+
+    def plate(self):
+        field_length =  self.length() + 2*RADIUS 
+        field_width = 3*RADIUS*self.count + 10
+        visual.box(pos=(field_length/2,-2,field_width/2),width=field_width,length=field_length,height=1,color=BOX_COLOR)
  
-connlist = select_data()
+visual.scene.forward = (0.25,0.25,10)
+visual.scene.autocenter = 1
 
-scene.forward = (0.25,0.25,10)
-scene.autocenter = 1
-
-conns = []
-for t in range(CONN_COUNT):
-  conn = cylinder( pos=(connlist[t][0]-connlist[0][0],0,(3*RADIUS)*t) )
-  conn.color = conn.icolor = COLOR
-  conn.radius = RADIUS
-  height = connlist[t][1] - connlist[t][0] - BORDER
-  conn.axis = (height,0,0)
-  conn.label = label(pos=conn.pos, xoffset = 10, yoffset = 10,  text='%s:%d\n%d/%d bits\n%f sec' % (connlist[t][2], connlist[t][3], connlist[t][4], connlist[t][5],connlist[t][1] - connlist[t][0]))
-  conn.dport = connlist[t][3]
-  conn.label.visible = 0
-  conns.append (conn)
-  b = cylinder( pos=(connlist[t][0]-connlist[0][0],0,(3*RADIUS)*t) )
-  b.radius = RADIUS
-  b.color = b.icolor = START_COLOR
-  b.axis = (BORDER,0,0)
-  b = cylinder( pos=(connlist[t][1]-connlist[0][0]-BORDER,0,(3*RADIUS)*t) )
-  b.radius = RADIUS
-  b.color = b.icolor = END_COLOR
-  b.axis = (BORDER,0,0)
-
-
-
-# Draw a grid:
-#for i in range(CONN_COUNT):
-#    curve(pos=[(2*i-20,0,-20),(2*i-20,0,20)], color=color.cyan)       
-#    curve(pos=[(-20,0,2*i-20),(20,0,2*i-20)], color=color.cyan)
-field_length = max(connlist)[1] - connlist[0][0] + 2*RADIUS 
-field_width = CONN_COUNT*3*RADIUS + 10
-box(pos=(field_length/2,-2,field_width/2),width=field_width,length=field_length,height=1,color=BOX_COLOR)
+# Init connections list
+connlist = connections()
+connlist.from_pgsql(CONN_COUNT)
+connlist.plate()
 
 objlist = []
 # Drag and drop loop
 while 1:
-  if scene.mouse.events:
-    c = scene.mouse.getevent()
+  if visual.scene.mouse.events:
+    c = visual.scene.mouse.getevent()
     if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
       if not c.shift:
 	 for object in objlist:
@@ -88,13 +106,13 @@ while 1:
          objlist.append(c.pick)
 	 c.pick.label.visible = 1
          c.pick.color = HIGHLIGHT_COLOR
-  if scene.kb.keys: # is there an event waiting to be processed?
-        s = scene.kb.getkey() # obtain keyboard information
+  if visual.scene.kb.keys: # is there an event waiting to be processed?
+        s = visual.scene.kb.getkey() # obtain keyboard information
 	if len(s) == 1:
 	  if s == 'p' and len(objlist) == 1:
              highlight = objlist[0]
-             for conn in conns:
-		if conn.dport == highlight.dport:
+             for conn in connlist:
+		if hasattr(conn, "dport") and  hasattr(highlight, "dport") and conn.dport == highlight.dport:
 		    objlist.append(conn)
 		    conn.color = HIGHLIGHT_COLOR
 		    conn.label.visible = 1
