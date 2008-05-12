@@ -27,7 +27,8 @@ for t in range(conn_count):
   conn.color = conn.icolor = (0.5,0.5,1)
   height = connlist[t][1] - connlist[t][0] - border
   conn.axis = (height,0,0)
-  conn.label = '%s:%d\n%d/%d bits\n%f sec' % (connlist[t][2], connlist[t][3], connlist[t][4], connlist[t][5],connlist[t][1] - connlist[t][0])
+  conn.label = label(pos=conn.pos, xoffset = 1, yoffset = 1,  text='%s:%d\n%d/%d bits\n%f sec' % (connlist[t][2], connlist[t][3], connlist[t][4], connlist[t][5],connlist[t][1] - connlist[t][0]))
+  conn.label.visible = 0
   conns.append (conn)
   b = cylinder( pos=(connlist[t][0]-connlist[0][0],0,2*t) )
   b.color = b.icolor = (0.5,1,0.5)
@@ -46,17 +47,18 @@ field_length = max(connlist)[1] - connlist[0][0] + 4
 field_width = conn_count*2 + 4
 box(pos=(field_length/2,-2,field_width/2),width=field_width,length=field_length,height=1,color=(0.5,0.5,0.5))
 
-prevlabel = None
-prevobject = None
+objlist = []
 # Drag and drop loop
 while 1:
   if scene.mouse.events:
     c = scene.mouse.getevent()
     if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
-      if (hasattr(prevlabel, "pos")):
-	 prevlabel.visible = 0
-      if (hasattr(prevobject, "pos")):
-	 prevobject.color = prevobject.icolor = (0.5,0.5,1)
-      prevobject = c.pick
-      c.pick.color = (1,1,1)
-      prevlabel = label(pos=c.pick.pos, xoffset = 1, yoffset = 1, text = c.pick.label)
+      if not c.shift:
+	 for object in objlist:
+            object.label.visible=0
+	    object.color = object.icolor = (0.5,0.5,1)
+	 objlist = []
+      if (hasattr(c.pick, "label")):
+         objlist.append(c.pick)
+	 c.pick.label.visible = 1
+         c.pick.color = (1,1,1)
