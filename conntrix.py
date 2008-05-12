@@ -1,4 +1,21 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Copyright(C) 2008 Eric Leblond
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+"""
 
 from visual import *
 from random import uniform, randint
@@ -26,7 +43,6 @@ connlist = select_data()
 scene.forward = (0.25,0.25,10)
 scene.autocenter = 1
 
-# Create some random boxes:
 conns = []
 for t in range(CONN_COUNT):
   conn = cylinder( pos=(connlist[t][0]-connlist[0][0],0,(3*RADIUS)*t) )
