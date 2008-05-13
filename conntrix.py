@@ -94,7 +94,7 @@ class connections(list):
         for i in range(GRADUATION):
             visual.curve(pos=[(field_length/GRADUATION*i,-(RADIUS+1)+1,0), (field_length/GRADUATION*i,-(RADIUS+1)+1,field_width)])
             ctime = time.strftime("%H:%M:%S", time.localtime(self.inittime + GRADUATION*i))
-            visual.label(pos=(field_length/GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), height = 2, yoffset = 1.5*RADIUS)
+            visual.label(pos=(field_length/GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
 
 def main_loop():
     objlist = []
