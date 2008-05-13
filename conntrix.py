@@ -96,16 +96,16 @@ objlist = []
 while 1:
     if visual.scene.mouse.events:
         c = visual.scene.mouse.getevent()
-    if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
-        if not c.shift:
-            for object in objlist:
-                object.color = object.icolor = COLOR
-            object.label.visible = 0
-        objlist = []
-    if (hasattr(c.pick, "label")):
-        objlist.append(c.pick)
-        c.pick.label.visible = 1
-    c.pick.color = HIGHLIGHT_COLOR
+        if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
+            if not c.shift:
+                for object in objlist:
+                    object.color = object.icolor = COLOR
+                    object.label.visible = 0
+            objlist = []
+            if (hasattr(c.pick, "label")):
+                objlist.append(c.pick)
+                c.pick.label.visible = 1
+                c.pick.color = HIGHLIGHT_COLOR
     if visual.scene.kb.keys: # is there an event waiting to be processed?
         s = visual.scene.kb.getkey() # obtain keyboard information
         if (len(s) == 1):
