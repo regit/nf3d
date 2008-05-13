@@ -96,35 +96,38 @@ class connections(list):
             ctime = time.strftime("%H:%M:%S", time.localtime(self.inittime + GRADUATION*i))
             visual.label(pos=(field_length/GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), height = 2, yoffset = 1.5*RADIUS)
 
+def main_loop():
+    objlist = []
+# Drag and drop loop
+    while 1:
+        if visual.scene.mouse.events:
+            c = visual.scene.mouse.getevent()
+            if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
+                if not c.shift:
+                    for object in objlist:
+                        object.color = object.icolor = COLOR
+                        object.label.visible = 0
+                objlist = []
+                if (hasattr(c.pick, "label")):
+                    objlist.append(c.pick)
+                    c.pick.label.visible = 1
+                    c.pick.color = HIGHLIGHT_COLOR
+        if visual.scene.kb.keys: # is there an event waiting to be processed?
+            s = visual.scene.kb.getkey() # obtain keyboard information
+            if (len(s) == 1):
+                if (s == 'p') and (len(objlist) == 1):
+                    highlight = objlist[0]
+                    for conn in connlist:
+                        if hasattr(conn, "dport") and  hasattr(highlight, "dport") and conn.dport == highlight.dport:
+                            objlist.append(conn)
+                            conn.color = HIGHLIGHT_COLOR
+                            conn.label.visible = 1
+
 
 
 # Init connections list
 connlist = connections()
 connlist.from_pgsql(CONN_COUNT)
 connlist.plate()
+main_loop()
 
-objlist = []
-# Drag and drop loop
-while 1:
-    if visual.scene.mouse.events:
-        c = visual.scene.mouse.getevent()
-        if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
-            if not c.shift:
-                for object in objlist:
-                    object.color = object.icolor = COLOR
-                    object.label.visible = 0
-            objlist = []
-            if (hasattr(c.pick, "label")):
-                objlist.append(c.pick)
-                c.pick.label.visible = 1
-                c.pick.color = HIGHLIGHT_COLOR
-    if visual.scene.kb.keys: # is there an event waiting to be processed?
-        s = visual.scene.kb.getkey() # obtain keyboard information
-        if (len(s) == 1):
-            if (s == 'p') and (len(objlist) == 1):
-                highlight = objlist[0]
-                for conn in connlist:
-                    if hasattr(conn, "dport") and  hasattr(highlight, "dport") and conn.dport == highlight.dport:
-                        objlist.append(conn)
-                        conn.color = HIGHLIGHT_COLOR
-                        conn.label.visible = 1
