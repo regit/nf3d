@@ -22,6 +22,7 @@ from random import uniform, randint
 
 import pg
 import sys
+import time
 
 CONN_COUNT = 40
 COLOR = (0.5,0.5,1)
@@ -31,6 +32,7 @@ HIGHLIGHT_COLOR = (1,1,1)
 BOX_COLOR = (0.5,0.5,0.5)
 RADIUS = 10 
 BORDER = 0.2
+GRADUATION = 300
 
 visual.scene.width = 800
 visual.scene.height = 600
@@ -73,8 +75,9 @@ class connections(list):
         conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_sec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen FROM ulog2_ct  where flow_end_sec IS NOT NULL ORDER BY flow_start_sec ASC LIMIT %s" % (count)).getresult()
         t = 0
         self.count = count
+        self.inittime = conns[0][0]
         for elt in conns:
-            conn = connection(elt[0]-conns[0][0], elt[1]-conns[0][0])
+            conn = connection(elt[0]-self.inittime, elt[1]-self.inittime)
             conn.set_label(elt[2], elt[3], elt[4], elt[5])
             conn.ordonate(t)
             self.append(conn)
@@ -87,6 +90,10 @@ class connections(list):
         field_length =  self.length() + 2*RADIUS
         field_width = 3*RADIUS*self.count + 10
         visual.box(pos = (field_length/2,-(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
+        for i in range(field_length/GRADUATION):
+            visual.curve(pos=[(GRADUATION*i,-(RADIUS+1)+1,0), (GRADUATION*i,-(RADIUS+1)+1,field_width)])
+            ctime = time.strftime("%H:%M:%S", time.localtime(self.inittime + GRADUATION*i))
+            visual.label(pos=(GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), height = 2, yoffset = 1.5*RADIUS)
 
 
 
