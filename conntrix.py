@@ -29,8 +29,13 @@ START_COLOR = (0.5,1,0.5)
 END_COLOR = (1,0.5,0.5)
 HIGHLIGHT_COLOR = (1,1,1)
 BOX_COLOR = (0.5,0.5,0.5)
-RADIUS = 2
+RADIUS = 10 
 BORDER = 0.2
+
+visual.scene.width = 800
+visual.scene.height = 600
+visual.scene.forward = (0.25,-10.25,-10)
+visual.scene.autocenter = 1
 
 class connection(visual.cylinder):
     """
@@ -81,10 +86,9 @@ class connections(list):
     def plate(self):
         field_length =  self.length() + 2*RADIUS
         field_width = 3*RADIUS*self.count + 10
-        visual.box(pos = (field_length/2,-2,field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
+        visual.box(pos = (field_length/2,-(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
 
-visual.scene.forward = (0.25,0.25,10)
-visual.scene.autocenter = 1
+
 
 # Init connections list
 connlist = connections()
