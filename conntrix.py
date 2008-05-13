@@ -26,6 +26,8 @@ import time
 
 CONN_COUNT = 40
 COLOR = (0.5,0.5,1)
+COLOR_TCP = (0.5,0.7,0.5)
+COLOR_UDP = (0.5, 0.5, 0.7)
 START_COLOR = (0.5,1,0.5)
 END_COLOR = (1,0.5,0.5)
 HIGHLIGHT_COLOR = (1,1,1)
@@ -44,13 +46,15 @@ class connection(visual.cylinder):
     Store information about a connection and related object.
     """
 
-    def __init__(self, start, end, **kargs):
+    def __init__(self, start, end, proto, **kargs):
         visual.cylinder.__init__(self, **kargs)
         self.pos = (start,0, 0)
         self.color = self.icolor = COLOR
         self.radius = RADIUS
         self.axis = (end - start,0,0)
         self.label = "None"
+        self.proto = proto
+        self.normal()
 
     def ordonate(self, index):
         self.z = (3*RADIUS)*index
@@ -65,6 +69,16 @@ class connection(visual.cylinder):
     def set_port(self, port):
         self.dport = port
 
+    def normal(self):
+        if (self.proto == 6):
+            self.color = self.icolor = COLOR_TCP
+        elif (self.proto == 17):
+            self.color = self.icolor = COLOR_UDP
+
+    def highlight(self):
+        self.color = HIGHLIGHT_COLOR
+        self.label.visible = 1
+
 class connections(list):
     """
     Connections list with visual elements
@@ -72,13 +86,13 @@ class connections(list):
 
     def from_pgsql(self, count, **kargs):
         pgcnx = pg.connect('ulog2', 'localhost', 5432, None, None, 'ulog2', 'ulog2')
-        conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_sec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen FROM ulog2_ct  where flow_end_sec IS NOT NULL ORDER BY flow_start_sec DESC LIMIT %s" % (count)).getresult()
+        conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_sec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol FROM ulog2_ct  where flow_end_sec IS NOT NULL ORDER BY flow_start_sec DESC LIMIT %s" % (count)).getresult()
         t = 0
         self.count = len(conns)
         conns.sort(lambda x, y: cmp(x[0], y[0]))
         self.inittime = conns[0][0]
         for elt in conns:
-            conn = connection(elt[0]-self.inittime, elt[1]-self.inittime)
+            conn = connection(elt[0]-self.inittime, elt[1]-self.inittime,elt[6])
             conn.set_label(elt[2], elt[3], elt[4], elt[5])
             conn.ordonate(t)
             self.append(conn)
@@ -105,13 +119,12 @@ def main_loop():
             if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
                 if not c.shift:
                     for object in objlist:
-                        object.color = object.icolor = COLOR
+                        object.normal()
                         object.label.visible = 0
                 objlist = []
                 if (hasattr(c.pick, "label")):
                     objlist.append(c.pick)
-                    c.pick.label.visible = 1
-                    c.pick.color = HIGHLIGHT_COLOR
+                    c.pick.highlight()
         if visual.scene.kb.keys: # is there an event waiting to be processed?
             s = visual.scene.kb.getkey() # obtain keyboard information
             if (len(s) == 1):
@@ -120,8 +133,7 @@ def main_loop():
                     for conn in connlist:
                         if hasattr(conn, "dport") and  hasattr(highlight, "dport") and conn.dport == highlight.dport:
                             objlist.append(conn)
-                            conn.color = HIGHLIGHT_COLOR
-                            conn.label.visible = 1
+                            conn.highlight()
 
 
 
