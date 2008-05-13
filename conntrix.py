@@ -81,7 +81,7 @@ class connections(list):
     def plate(self):
         field_length =  self.length() + 2*RADIUS 
         field_width = 3*RADIUS*self.count + 10
-        visual.box(pos=(field_length/2,-2,field_width/2),width=field_width,length=field_length,height=1,color=BOX_COLOR)
+        visual.box(pos = (field_length/2,-2,field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
  
 visual.scene.forward = (0.25,0.25,10)
 visual.scene.autocenter = 1
@@ -94,25 +94,25 @@ connlist.plate()
 objlist = []
 # Drag and drop loop
 while 1:
-  if visual.scene.mouse.events:
-    c = visual.scene.mouse.getevent()
+    if visual.scene.mouse.events:
+        c = visual.scene.mouse.getevent()
     if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
-      if not c.shift:
-	 for object in objlist:
-            object.label.visible=0
-	    object.color = object.icolor = COLOR
-	 objlist = []
-      if (hasattr(c.pick, "label")):
-         objlist.append(c.pick)
-	 c.pick.label.visible = 1
-         c.pick.color = HIGHLIGHT_COLOR
-  if visual.scene.kb.keys: # is there an event waiting to be processed?
+        if not c.shift:
+	        for object in objlist:
+	            object.color = object.icolor = COLOR
+                object.label.visible = 0
+        objlist = []
+    if (hasattr(c.pick, "label")):
+        objlist.append(c.pick)
+	c.pick.label.visible = 1
+    c.pick.color = HIGHLIGHT_COLOR
+    if visual.scene.kb.keys: # is there an event waiting to be processed?
         s = visual.scene.kb.getkey() # obtain keyboard information
-	if len(s) == 1:
-	  if s == 'p' and len(objlist) == 1:
-             highlight = objlist[0]
-             for conn in connlist:
-		if hasattr(conn, "dport") and  hasattr(highlight, "dport") and conn.dport == highlight.dport:
-		    objlist.append(conn)
-		    conn.color = HIGHLIGHT_COLOR
-		    conn.label.visible = 1
+        if (len(s) == 1):
+            if (s == 'p') and (len(objlist) == 1):
+                highlight = objlist[0]
+                for conn in connlist:
+		            if hasattr(conn, "dport") and  hasattr(highlight, "dport") and conn.dport == highlight.dport:
+		                objlist.append(conn)
+		                conn.color = HIGHLIGHT_COLOR
+		                conn.label.visible = 1
