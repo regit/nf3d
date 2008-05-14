@@ -61,7 +61,7 @@ class connection(visual.cylinder):
         self.label.z = (3*RADIUS)*index
 
     def set_label(self, ip_dest, port_dest, bytes_in, bytes_out):
-        self.label = visual.label(pos=self.pos, xoffset = 10, yoffset = 10,  text='%s:%d\n%d/%d bits\n%f sec' % (ip_dest, port_dest, bytes_in, bytes_out, self.axis.x))
+        self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s:%d\n%d/%d bits\n%f sec' % (ip_dest, port_dest, bytes_in, bytes_out, self.axis.x))
         self.label.visible = 0
         self.set_port(port_dest)
 
