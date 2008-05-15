@@ -159,7 +159,7 @@ def normalize_objs(objlist):
     for object in objlist:
         object.normal()
         object.label.visible = 0
-    objlist = []
+    return []
 
 def main_loop(connlist, pgcnx):
     visual.rate(50)
@@ -170,19 +170,19 @@ def main_loop(connlist, pgcnx):
             c = visual.scene.mouse.getevent()
             if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
                 if not c.shift:
-                    normalize_objs(objlist)
+                    objlist = normalize_objs(objlist)
                 if (hasattr(c.pick, "label")):
                     objlist.append(c.pick)
                     c.pick.highlight()
                 else:
-                    normalize_objs(objlist)
+                    objlist = normalize_objs(objlist)
         if visual.scene.kb.keys: # is there an event waiting to be processed?
             s = visual.scene.kb.getkey() # obtain keyboard information
             if (len(s) == 1):
                 if (s == 'p') and (len(objlist) == 1):
                     highlight = objlist[0]
                     for conn in connlist:
-                        if hasattr(conn, "dport") and  hasattr(highlight, "dport") and conn.dport == highlight.dport:
+                        if hasattr(conn, "dport") and hasattr(highlight, "dport") and conn.dport == highlight.dport:
                             objlist.append(conn)
                             conn.highlight()
                 elif (s == 'r'):
