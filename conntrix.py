@@ -22,9 +22,9 @@ from random import uniform, randint
 
 import pg
 import sys
+import getopt
 import time
 
-CONN_COUNT = 40
 REFRESH = 1
 COLOR = (0.5,0.5,1)
 COLOR_TCP = (0.5,0.7,0.5)
@@ -35,7 +35,7 @@ HIGHLIGHT_COLOR = (1,1,1)
 BOX_COLOR = (0.5,0.5,0.5)
 RADIUS = 10 
 BORDER = 0.2
-GRADUATION = 10
+GRADUATION = 5 
 
 visual.scene.width = 800
 visual.scene.height = 600
@@ -93,22 +93,41 @@ class connections(list):
     Connections list with visual elements
     """
 
-    def from_pgsql(self, count, **kargs):
+    def __init__(self, start, end, duration, **kargs):
+        list.__init__(self, **kargs)
+        self.start = start
+        self.end = end
+        self.duration = duration
+
+    def from_pgsql(self, pgcnx, **kargs):
+        ctime = time.time()
 #        conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol FROM ulog2_ct  where flow_end_sec IS NOT NULL ORDER BY flow_start_sec DESC LIMIT %s" % (count)).getresult()
         #conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start,  flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct ORDER BY flow_start_sec DESC LIMIT %s" % (count)).getresult()
-        strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (time.time()-600) 
+        if (self.start and self.end):
+# TODO
+            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (self.duration) 
+        elif (self.start and self.duration):
+# TODO
+            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (self.duration) 
+        elif (self.start):
+# TODO
+            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (self.duration) 
+        elif (self.duration):
+            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (ctime - self.duration) 
+
+        print strquery
         conns = pgcnx.query(strquery).dictresult()
         t = 0
         self.count = len(conns)
         print "Found %d connections" % (self.count)
         conns.sort(lambda x, y: cmp(x["start"], y["start"]))
-        self.inittime = conns[0]["start"]
-        self.endtime = time.time()
+        self.inittime = ctime - self.duration
+        self.endtime = ctime
         for elt in conns:
             if (elt["end"]):
-                conn = connection(elt["start"]-self.inittime, elt["end"]-self.inittime,elt["ct_event"])
+                conn = connection(max(0, elt["start"]-self.inittime), elt["end"]-self.inittime,elt["ct_event"])
             else:
-                conn = connection(elt["start"]-self.inittime, self.endtime-self.inittime,elt["ct_event"])
+                conn = connection(max(0,elt["start"]-self.inittime), self.endtime-self.inittime,elt["ct_event"])
             conn.set_label(elt["orig_ip_daddr_str"], elt["orig_l4_dport"], elt["orig_raw_pktlen"], elt["reply_raw_pktlen"])
             conn.ordonate(t)
             self.append(conn)
@@ -131,12 +150,12 @@ class connections(list):
             ctime = time.strftime("%H:%M:%S", time.localtime(self.inittime + GRADUATION*i))
             visual.label(pos=(field_length/GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
 
-    def refresh(self):
+    def refresh(self, pgnx):
         self.clear()
-        self.from_pgsql(CONN_COUNT)
+        self.from_pgsql(pgnx)
         self.plate()
 
-def main_loop():
+def main_loop(connlist, pgcnx):
     visual.rate(50)
     objlist = []
 # Drag and drop loop
@@ -162,12 +181,48 @@ def main_loop():
                             objlist.append(conn)
                             conn.highlight()
                 elif (s == 'r'):
-                    connlist.refresh()
+                    connlist.refresh(pgcnx)
 
-# Init connections list
-pgcnx = pg.connect('ulog2', 'localhost', 5432, None, None, 'ulog2', 'ulog2')
-connlist = connections()
-connlist.from_pgsql(CONN_COUNT)
-connlist.plate()
-main_loop()
+def usage():
+    print "conntrix.py [-h] [-s START] [-e END] [-d DURATION]\n"
+
+
+def main():
+    start = 0
+    end = 0
+    duration = 600
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hs:e:d:", ["help", "start=", "end=", "duration="])
+    except getopt.GetoptError, err:
+        # print help information and exit:
+        print str(err) # will print something like "option -a not recognized"
+        usage()
+        sys.exit(2)
+    output = None
+    verbose = False
+    for o, a in opts:
+        print o
+        if o == "-v":
+            verbose = True
+        elif o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif o in ("-s", "--start"):
+            start = a
+        elif o in ("-e", "--end"):
+            end = a
+        elif o in ("-d", "--duration"):
+            duration = int(a)
+        else:
+            assert False, "unhandled option"
+
+    # Init connections list
+    pgcnx = pg.connect('ulog2', 'localhost', 5432, None, None, 'ulog2', 'ulog2')
+    connlist = connections(start, end, duration)
+    connlist.from_pgsql(pgcnx)
+    connlist.plate()
+    main_loop(connlist, pgcnx)
+
+if __name__ == "__main__":
+    main()
 
