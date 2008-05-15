@@ -61,6 +61,8 @@ class connection(visual.cylinder):
         self.label.z = (3*RADIUS)*index
 
     def set_label(self, ip_dest, port_dest, bytes_in, bytes_out):
+        if (not port_dest):
+            port_dest = 0
         if (self.state == 1):
             self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s:%d\n%d/%d bits' % (ip_dest, port_dest, bytes_in, bytes_out))
         elif (self.state == 4):
@@ -89,24 +91,28 @@ class connections(list):
 
     def from_pgsql(self, count, **kargs):
 #        conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol FROM ulog2_ct  where flow_end_sec IS NOT NULL ORDER BY flow_start_sec DESC LIMIT %s" % (count)).getresult()
-        conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct ORDER BY flow_start_sec DESC LIMIT %s" % (count)).getresult()
+        #conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start,  flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct ORDER BY flow_start_sec DESC LIMIT %s" % (count)).getresult()
+        strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (time.time()-600) 
+        conns = pgcnx.query(strquery).dictresult()
         t = 0
         self.count = len(conns)
-        conns.sort(lambda x, y: cmp(x[0], y[0]))
-        self.inittime = conns[0][0]
-        ctime = time.time()
+        print "Found %d connections" % (self.count)
+        conns.sort(lambda x, y: cmp(x["start"], y["start"]))
+        self.inittime = conns[0]["start"]
+        self.endtime = time.time()
         for elt in conns:
-            if (elt[1]):
-                conn = connection(elt[0]-self.inittime, elt[1]-self.inittime,elt[7])
+
+            if (elt["end"]):
+                conn = connection(elt["start"]-self.inittime, elt["end"]-self.inittime,elt["ct_event"])
             else:
-                conn = connection(elt[0]-self.inittime, ctime-self.inittime,elt[7])
-            conn.set_label(elt[2], elt[3], elt[4], elt[5])
+                conn = connection(elt["start"]-self.inittime, self.endtime-self.inittime,elt["ct_event"])
+            conn.set_label(elt["orig_ip_daddr_str"], elt["orig_l4_dport"], elt["orig_raw_pktlen"], elt["reply_raw_pktlen"])
             conn.ordonate(t)
             self.append(conn)
             t += 1
 
     def length(self):
-        return max(self).axis.x+max(self).pos.x
+        return self.endtime - self.inittime
 
     def clear(self):
         self = []
