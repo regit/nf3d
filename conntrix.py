@@ -25,6 +25,7 @@ import sys
 import time
 
 CONN_COUNT = 40
+REFRESH = 1
 COLOR = (0.5,0.5,1)
 COLOR_TCP = (0.5,0.7,0.5)
 COLOR_UDP = (0.5, 0.5, 0.7)
@@ -64,7 +65,7 @@ class connection(visual.cylinder):
         if (not port_dest):
             port_dest = 0
         if (self.state == 1):
-            self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s:%d\n%d/%d bits' % (ip_dest, port_dest, bytes_in, bytes_out))
+            self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s:%d' % (ip_dest, port_dest))
         elif (self.state == 4):
             self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s:%d\n%d/%d bits\n%f sec' % (ip_dest, port_dest, bytes_in, bytes_out, self.axis.x))
         self.label.visible = 0
@@ -73,6 +74,9 @@ class connection(visual.cylinder):
     # FIXME: has to be improved
     def set_port(self, port):
         self.dport = port
+
+    def set_axis(self, timestamp):
+        self.axis = (timestamp, 0, 0)
 
     def normal(self):
         if (self.state == 1):
@@ -101,7 +105,6 @@ class connections(list):
         self.inittime = conns[0]["start"]
         self.endtime = time.time()
         for elt in conns:
-
             if (elt["end"]):
                 conn = connection(elt["start"]-self.inittime, elt["end"]-self.inittime,elt["ct_event"])
             else:
@@ -128,6 +131,11 @@ class connections(list):
             ctime = time.strftime("%H:%M:%S", time.localtime(self.inittime + GRADUATION*i))
             visual.label(pos=(field_length/GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
 
+    def refresh(self):
+        self.clear()
+        self.from_pgsql(CONN_COUNT)
+        self.plate()
+
 def main_loop():
     visual.rate(50)
     objlist = []
@@ -153,12 +161,8 @@ def main_loop():
                         if hasattr(conn, "dport") and  hasattr(highlight, "dport") and conn.dport == highlight.dport:
                             objlist.append(conn)
                             conn.highlight()
-
                 elif (s == 'r'):
-                    connlist.clear()
-                    connlist.from_pgsql(CONN_COUNT)
-                    connlist.plate()
-
+                    connlist.refresh()
 
 # Init connections list
 pgcnx = pg.connect('ulog2', 'localhost', 5432, None, None, 'ulog2', 'ulog2')
