@@ -155,6 +155,12 @@ class connections(list):
         self.from_pgsql(pgnx)
         self.plate()
 
+def normalize_objs(objlist):
+    for object in objlist:
+        object.normal()
+        object.label.visible = 0
+    objlist = []
+
 def main_loop(connlist, pgcnx):
     visual.rate(50)
     objlist = []
@@ -164,13 +170,12 @@ def main_loop(connlist, pgcnx):
             c = visual.scene.mouse.getevent()
             if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
                 if not c.shift:
-                    for object in objlist:
-                        object.normal()
-                        object.label.visible = 0
-                objlist = []
+                    normalize_objs(objlist)
                 if (hasattr(c.pick, "label")):
                     objlist.append(c.pick)
                     c.pick.highlight()
+                else:
+                    normalize_objs(objlist)
         if visual.scene.kb.keys: # is there an event waiting to be processed?
             s = visual.scene.kb.getkey() # obtain keyboard information
             if (len(s) == 1):
@@ -182,6 +187,9 @@ def main_loop(connlist, pgcnx):
                             conn.highlight()
                 elif (s == 'r'):
                     connlist.refresh(pgcnx)
+                elif (s == 'c'):
+                    normalize_objs(objlist)
+                    
 
 def usage():
     print "conntrix.py [-h] [-s START] [-e END] [-d DURATION]\n"
