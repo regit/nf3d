@@ -47,41 +47,42 @@ class connection(visual.cylinder):
     Store information about a connection and related object.
     """
 
-    def __init__(self, start, end, state, **kargs):
+    def __init__(self, start, end, conn, **kargs):
         visual.cylinder.__init__(self, **kargs)
         self.pos = (start,0, 0)
         self.color = self.icolor = COLOR
         self.radius = RADIUS
         self.axis = (end - start,0,0)
-        self.label = "None"
-        self.state = state
+        self.conn = conn
+        self.set_label()
         self.normal()
 
     def ordonate(self, index):
         self.z = (3*RADIUS)*index
         self.label.z = (3*RADIUS)*index
 
-    def set_label(self, ip_dest, port_dest, bytes_in, bytes_out):
-        if (not port_dest):
-            port_dest = 0
-        if (self.state == 1):
-            self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s:%d' % (ip_dest, port_dest))
-        elif (self.state == 4):
-            self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s:%d\n%d/%d bits\n%f sec' % (ip_dest, port_dest, bytes_in, bytes_out, self.axis.x))
+    def set_label(self):
+        txtlabel = ''
+        if (self.conn["orig_ip_protocol"] in (6,17)):
+            txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.conn["orig_ip_saddr_str"], self.conn["orig_l4_sport"], self.conn["orig_ip_daddr_str"], self.conn["orig_l4_dport"])
+        if (self.conn["orig_ip_protocol"] == 6):
+            txtlabel += 'PROTO: TCP'
+        elif (self.conn["orig_ip_protocol"] == 17):
+            txtlabel += 'PROTO: UDP'
+        elif (self.conn["orig_ip_protocol"] == 1):
+            txtlabel += 'PROTO: ICMP'
+        if (self.conn["ct_event"] == 1):
+            self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s' % (txtlabel))
+        elif (self.conn["ct_event"] == 4):
+            self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s\nIN %d/OUT %d bits\n%f sec' % (txtlabel, self.conn["reply_raw_pktlen"],self.conn["orig_raw_pktlen"]  , self.axis.x))
         self.label.visible = 0
-        self.set_port(port_dest)
-
-    # FIXME: has to be improved
-    def set_port(self, port):
-        self.dport = port
-
     def set_axis(self, timestamp):
         self.axis = (timestamp, 0, 0)
 
     def normal(self):
-        if (self.state == 1):
+        if (self.conn["ct_event"] == 1):
             self.color = self.icolor = COLOR_TCP
-        elif (self.state == 4):
+        elif (self.conn["ct_event"] == 4):
             self.color = self.icolor = COLOR_UDP
 
     def highlight(self):
@@ -113,7 +114,8 @@ class connections(list):
     def from_pgsql(self, pgcnx, **kargs):
         if (self.mode == "period"):
             strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, \
-            flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str,\
+            flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, \
+            orig_ip_saddr_str, orig_l4_sport, \
             orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
             ct_event FROM ulog2_ct WHERE \
             (flow_end_sec > %f AND flow_start_sec < %f) \
@@ -124,6 +126,7 @@ class connections(list):
             ctime = time.time()
             strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, \
             flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str,\
+            orig_ip_saddr_str, orig_l4_sport, \
             orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
             ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL\
             ORDER BY flow_start_sec DESC" % (ctime - self.duration) 
@@ -137,10 +140,9 @@ class connections(list):
         conns.sort(lambda x, y: cmp(x["start"], y["start"]))
         for elt in conns:
             if (elt["end"]):
-                conn = connection(max(0, elt["start"]-self.starttime), min(elt["end"]-self.starttime, self.duration),elt["ct_event"])
+                conn = connection(max(0, elt["start"]-self.starttime), min(elt["end"]-self.starttime, self.duration), elt)
             else:
-                conn = connection(max(0,elt["start"]-self.starttime), self.endtime-self.starttime,elt["ct_event"])
-            conn.set_label(elt["orig_ip_daddr_str"], elt["orig_l4_dport"], elt["orig_raw_pktlen"], elt["reply_raw_pktlen"])
+                conn = connection(max(0,elt["start"]-self.starttime), self.endtime-self.starttime,elt)
             conn.ordonate(t)
             self.append(conn)
             t += 1
@@ -194,7 +196,7 @@ def main_loop(connlist, pgcnx):
                 if (s == 'p') and (len(objlist) == 1):
                     highlight = objlist[0]
                     for conn in connlist:
-                        if hasattr(conn, "dport") and hasattr(highlight, "dport") and conn.dport == highlight.dport:
+                        if hasattr(conn.conn, "orig_l4_dport") and hasattr(highlight, "orig_l4_dport") and conn.conn["orig_l4_dport"] == highlight.conn["orig_l4_dport"]:
                             objlist.append(conn)
                             conn.highlight()
                 elif (s == 'r'):
