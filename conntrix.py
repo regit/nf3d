@@ -95,37 +95,34 @@ class connections(list):
 
     def __init__(self, start, end, duration, **kargs):
         list.__init__(self, **kargs)
-        self.start = start
-        self.end = end
+        self.inittime = start
+        self.endtime = end
         self.duration = duration
+        if (not self.inittime and not self.endtime):
+            self.mode = "duration"
+        else:
+            self.mode = "period"
+        if (not self.endtime and self.inittime and self.duration):
+            self.endtime = self.inittime + self.duration
+        print "Display of connections from %f to %f (duration %f)" % (self.inittime, self.endtime, self.duration)
 
     def from_pgsql(self, pgcnx, **kargs):
-        ctime = time.time()
-#        conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol FROM ulog2_ct  where flow_end_sec IS NOT NULL ORDER BY flow_start_sec DESC LIMIT %s" % (count)).getresult()
-        #conns = pgcnx.query("SELECT flow_start_sec+flow_start_usec/1000000 AS start,  flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct ORDER BY flow_start_sec DESC LIMIT %s" % (count)).getresult()
-        if (self.start and self.end):
-# TODO
-            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (self.duration) 
-        elif (self.start and self.duration):
-# TODO
-            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (self.duration) 
-        elif (self.start):
-# TODO
-            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (self.duration) 
-        elif (self.duration):
+        if (self.mode == "period"):
+            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE (flow_end_sec > %f OR flow_end_sec IS NULL) AND (flow_start_sec < %f) ORDER BY flow_start_sec DESC" % (self.inittime, self.endtime) 
+        elif (self.mode == "duration"):
+            ctime = time.time()
             strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (ctime - self.duration) 
+            self.inittime = ctime - self.duration
+            self.endtime = ctime
 
-        print strquery
         conns = pgcnx.query(strquery).dictresult()
         t = 0
         self.count = len(conns)
         print "Found %d connections" % (self.count)
         conns.sort(lambda x, y: cmp(x["start"], y["start"]))
-        self.inittime = ctime - self.duration
-        self.endtime = ctime
         for elt in conns:
             if (elt["end"]):
-                conn = connection(max(0, elt["start"]-self.inittime), elt["end"]-self.inittime,elt["ct_event"])
+                conn = connection(max(0, elt["start"]-self.inittime), min(elt["end"]-self.inittime, self.duration),elt["ct_event"])
             else:
                 conn = connection(max(0,elt["start"]-self.inittime), self.endtime-self.inittime,elt["ct_event"])
             conn.set_label(elt["orig_ip_daddr_str"], elt["orig_l4_dport"], elt["orig_raw_pktlen"], elt["reply_raw_pktlen"])
@@ -209,14 +206,13 @@ def main():
     output = None
     verbose = False
     for o, a in opts:
-        print o
         if o == "-v":
             verbose = True
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
         elif o in ("-s", "--start"):
-            start = a
+            start = int(a)
         elif o in ("-e", "--end"):
             end = a
         elif o in ("-d", "--duration"):
