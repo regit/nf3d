@@ -17,6 +17,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 """
 
+# SETUP YOUR DATABASE HERE
+DATABASE='ulog2'
+HOST = 'localhost'
+PORT = 5432
+LOGIN ='ulog2'
+PASSWORD ='ulog2'
+
 import visual
 from random import uniform, randint
 
@@ -25,7 +32,6 @@ import sys
 import getopt
 import time
 
-REFRESH = 1
 COLOR = (0.5,0.5,1)
 COLOR_TCP = (0.5,0.7,0.5)
 COLOR_UDP = (0.5, 0.5, 0.7)
@@ -310,7 +316,7 @@ def main():
             assert False, "unhandled option"
 
     # Init connections list
-    pgcnx = pg.connect('ulog2', 'localhost', 5432, None, None, 'ulog2', 'ulog2')
+    pgcnx = pg.connect(DATABASE, HOST, PORT, None, None, LOGIN, PASSWORD)
     connlist = connections(start, end, duration)
     connlist.from_pgsql(pgcnx)
     connlist.plate()
