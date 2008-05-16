@@ -95,24 +95,24 @@ class connections(list):
 
     def __init__(self, start, end, duration, **kargs):
         list.__init__(self, **kargs)
-        self.inittime = start
+        self.starttime = start
         self.endtime = end
         self.duration = duration
-        if (not self.inittime and not self.endtime):
+        if (not self.starttime and not self.endtime):
             self.mode = "duration"
         else:
             self.mode = "period"
-        if (not self.endtime and self.inittime and self.duration):
-            self.endtime = self.inittime + self.duration
-        print "Display of connections from %f to %f (duration %f)" % (self.inittime, self.endtime, self.duration)
+        if (not self.endtime and self.starttime and self.duration):
+            self.endtime = self.starttime + self.duration
+        print "Display of connections from %f to %f (duration %f)" % (self.starttime, self.endtime, self.duration)
 
     def from_pgsql(self, pgcnx, **kargs):
         if (self.mode == "period"):
-            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE (flow_end_sec > %f OR flow_end_sec IS NULL) AND (flow_start_sec < %f) ORDER BY flow_start_sec DESC" % (self.inittime, self.endtime) 
+            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE (flow_end_sec > %f OR flow_end_sec IS NULL) AND (flow_start_sec < %f) ORDER BY flow_start_sec DESC" % (self.starttime, self.endtime) 
         elif (self.mode == "duration"):
             ctime = time.time()
             strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (ctime - self.duration) 
-            self.inittime = ctime - self.duration
+            self.starttime = ctime - self.duration
             self.endtime = ctime
 
         conns = pgcnx.query(strquery).dictresult()
@@ -122,16 +122,16 @@ class connections(list):
         conns.sort(lambda x, y: cmp(x["start"], y["start"]))
         for elt in conns:
             if (elt["end"]):
-                conn = connection(max(0, elt["start"]-self.inittime), min(elt["end"]-self.inittime, self.duration),elt["ct_event"])
+                conn = connection(max(0, elt["start"]-self.starttime), min(elt["end"]-self.starttime, self.duration),elt["ct_event"])
             else:
-                conn = connection(max(0,elt["start"]-self.inittime), self.endtime-self.inittime,elt["ct_event"])
+                conn = connection(max(0,elt["start"]-self.starttime), self.endtime-self.starttime,elt["ct_event"])
             conn.set_label(elt["orig_ip_daddr_str"], elt["orig_l4_dport"], elt["orig_raw_pktlen"], elt["reply_raw_pktlen"])
             conn.ordonate(t)
             self.append(conn)
             t += 1
 
     def length(self):
-        return self.endtime - self.inittime
+        return self.endtime - self.starttime
 
     def clear(self):
         self = []
@@ -144,7 +144,7 @@ class connections(list):
         visual.box(pos = (field_length/2,-(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
         for i in range(GRADUATION):
             visual.curve(pos=[(field_length/GRADUATION*i,-(RADIUS+1)+1,0), (field_length/GRADUATION*i,-(RADIUS+1)+1,field_width)])
-            ctime = time.strftime("%H:%M:%S", time.localtime(self.inittime + GRADUATION*i))
+            ctime = time.strftime("%H:%M:%S", time.localtime(self.starttime + GRADUATION*i))
             visual.label(pos=(field_length/GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
 
     def refresh(self, pgnx):
