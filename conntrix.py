@@ -74,7 +74,7 @@ class connection(visual.cylinder):
         if (self.conn["ct_event"] == 1):
             self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s' % (txtlabel))
         elif (self.conn["ct_event"] == 4):
-            self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s\nIN %d/OUT %d bits\n%f sec' % (txtlabel, self.conn["reply_raw_pktlen"],self.conn["orig_raw_pktlen"]  , self.axis.x))
+            self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s\nIN: %d, OUT: %d bits\nDURATION: %f sec' % (txtlabel, self.conn["reply_raw_pktlen"],self.conn["orig_raw_pktlen"]  , self.axis.x))
         self.label.visible = 0
     def set_axis(self, timestamp):
         self.axis = (timestamp, 0, 0)
