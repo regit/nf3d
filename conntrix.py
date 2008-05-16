@@ -97,7 +97,12 @@ class connections(list):
         list.__init__(self, **kargs)
         self.starttime = start
         self.endtime = end
+        if (self.endtime <= self.starttime):
+            print "End before beginning, exiting"
+            sys.exit(1)
         self.duration = duration
+        if (self.starttime and self.endtime):
+            self.duration = self.endtime - self.starttime
         if (not self.starttime and not self.endtime):
             self.mode = "duration"
         else:
@@ -108,10 +113,21 @@ class connections(list):
 
     def from_pgsql(self, pgcnx, **kargs):
         if (self.mode == "period"):
-            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE (flow_end_sec > %f OR flow_end_sec IS NULL) AND (flow_start_sec < %f) ORDER BY flow_start_sec DESC" % (self.starttime, self.endtime) 
+            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, \
+            flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str,\
+            orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
+            ct_event FROM ulog2_ct WHERE \
+            (flow_end_sec > %f AND flow_start_sec < %f) \
+            OR \
+            (flow_end_sec IS NULL AND flow_start_sec < %f)\
+            ORDER BY flow_start_sec DESC" % (self.starttime, self.endtime, self.endtime) 
         elif (self.mode == "duration"):
             ctime = time.time()
-            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol, ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL ORDER BY flow_start_sec DESC" % (ctime - self.duration) 
+            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, \
+            flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str,\
+            orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
+            ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL\
+            ORDER BY flow_start_sec DESC" % (ctime - self.duration) 
             self.starttime = ctime - self.duration
             self.endtime = ctime
 
@@ -214,7 +230,7 @@ def main():
         elif o in ("-s", "--start"):
             start = int(a)
         elif o in ("-e", "--end"):
-            end = a
+            end = int(a)
         elif o in ("-d", "--duration"):
             duration = int(a)
         else:
