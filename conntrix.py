@@ -97,7 +97,7 @@ class connections(list):
         list.__init__(self, **kargs)
         self.starttime = start
         self.endtime = end
-        if (self.endtime <= self.starttime):
+        if (self.endtime < self.starttime):
             print "End before beginning, exiting"
             sys.exit(1)
         self.duration = duration
@@ -109,7 +109,6 @@ class connections(list):
             self.mode = "period"
         if (not self.endtime and self.starttime and self.duration):
             self.endtime = self.starttime + self.duration
-        print "Display of connections from %f to %f (duration %f)" % (self.starttime, self.endtime, self.duration)
 
     def from_pgsql(self, pgcnx, **kargs):
         if (self.mode == "period"):
