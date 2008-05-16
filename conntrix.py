@@ -78,6 +78,7 @@ class connection(visual.cylinder):
         elif (self.conn["ct_event"] == 4):
             self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s\nIN: %d, OUT: %d bits\nDURATION: %f sec' % (txtlabel, self.conn["reply_raw_pktlen"],self.conn["orig_raw_pktlen"]  , self.axis.x))
         self.label.visible = 0
+
     def set_axis(self, timestamp):
         self.axis = (timestamp, 0, 0)
 
@@ -98,8 +99,8 @@ class connections(list):
 
     def __init__(self, start, end, duration, **kargs):
         list.__init__(self, **kargs)
-        self.starttime = start
-        self.endtime = end
+        self.starttime = self.mintime = start
+        self.endtime = self.maxtime = end
         if (self.endtime < self.starttime):
             print "End before beginning, exiting"
             sys.exit(1)
@@ -117,6 +118,7 @@ class connections(list):
         self.filter = {}
         self.highlight_filter = {}
         self.pgconn = None
+        self.adaptative = False
 
     def from_pgsql(self, pgcnx, **kargs):
         if pgcnx != None:
@@ -154,17 +156,30 @@ class connections(list):
         self.count = len(conns)
         print "Found %d connections" % (self.count)
         conns.sort(lambda x, y: cmp(x["start"], y["start"]))
+        if self.adaptative:
+            self.mintime = max(self.starttime, conns[0]["start"])
+        else:
+            self.mintime = self.starttime
+            self.maxtime = self.endtime
+        maxtime = 0
         for elt in conns:
             if (elt["end"]):
-                conn = connection(max(0, elt["start"]-self.starttime), min(elt["end"]-self.starttime, self.duration), elt)
+                conn = connection(max(0, elt["start"]-self.mintime), min(elt["end"]-self.mintime, self.duration), elt)
+                if self.adaptative:
+                    maxtime = max(maxtime, elt["end"])
             else:
-                conn = connection(max(0,elt["start"]-self.starttime), self.endtime-self.starttime,elt)
+                conn = connection(max(0,elt["start"]-self.mintime), self.endtime-self.mintime,elt)
+                maxtime = self.endtime
+            self.maxtime = min(self.endtime, maxtime)
             conn.ordonate(t)
             self.conns.append(conn)
             t += 1
 
     def length(self):
-        return self.endtime - self.starttime
+        if (self.adaptative):
+            return self.maxtime - self.mintime
+        else:
+            return self.endtime - self.starttime
 
     def clear(self):
         self = []
@@ -219,6 +234,12 @@ class connections(list):
 
     def reset_filter(self):
         self.filter = {}
+        self.mintime = self.starttime
+        self.maxtime = self.endtime
+        self.refresh()
+
+    def toggle_adaptative(self):
+        self.adaptative = not self.adaptative
         self.refresh()
 
 
@@ -251,6 +272,8 @@ def main_loop(connlist):
                     connlist.apply_filter()
                 elif (s == 'R'):
                     connlist.reset_filter()
+                elif (s == 'a'):
+                    connlist.toggle_adaptative()
 
                     
 
