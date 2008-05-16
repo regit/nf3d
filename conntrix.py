@@ -98,13 +98,12 @@ class connection(visual.cylinder):
         self.color = HIGHLIGHT_COLOR
         self.label.visible = 1
 
-class connections(list):
+class connections():
     """
     Connections list with visual elements
     """
 
     def __init__(self, start, end, duration, **kargs):
-        list.__init__(self, **kargs)
         self.starttime = self.mintime = start
         self.endtime = self.maxtime = end
         if (self.endtime < self.starttime):
@@ -189,21 +188,28 @@ class connections(list):
             return self.endtime - self.starttime
 
     def clear(self):
-        self = []
-        for obj in visual.scene.objects:
+        for obj in self.conns:
+            obj.label.visible = 0
             obj.visible = 0
+        for obj in self.container:
+            obj.visible = 0
+        self.conns = []
+        self.container = []
 
     def plate(self):
         field_length =  self.length() + 2*RADIUS
         field_width = 3*RADIUS*self.count + 10
-        visual.box(pos = (field_length/2,-(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
+        box = visual.box(pos = (field_length/2,-(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
+        self.container = []
+        self.container.append(box)
         for i in range(GRADUATION):
-            visual.curve(pos=[(field_length/GRADUATION*i,-(RADIUS+1)+1,0), (field_length/GRADUATION*i,-(RADIUS+1)+1,field_width)])
+            obj = visual.curve(pos=[(field_length/GRADUATION*i,-(RADIUS+1)+1,0), (field_length/GRADUATION*i,-(RADIUS+1)+1,field_width)])
+            self.container.append(obj)
             ctime = time.strftime("%H:%M:%S", time.localtime(self.starttime + GRADUATION*i))
-            visual.label(pos=(field_length/GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
+            obj = visual.label(pos=(field_length/GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
+            self.container.append(obj)
 
     def refresh(self):
-        self.conns = []
         self.clear()
         self.from_pgsql(None)
         self.plate()
