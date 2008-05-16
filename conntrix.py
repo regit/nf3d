@@ -42,6 +42,8 @@ visual.scene.height = 600
 visual.scene.forward = (0.25,-10.25,-10)
 visual.scene.autocenter = 1
 
+filters_list = { 'p': 'orig_l4_dport', 'd': 'orig_ip_daddr_str', 's': 'orig_ip_saddr_str', 'P': 'orig_l4_sport' }
+
 class connection(visual.cylinder):
     """
     Store information about a connection and related object.
@@ -169,6 +171,17 @@ class connections(list):
         self.from_pgsql(pgnx)
         self.plate()
 
+    def highlight(self, highlight, filter):
+        print 'filter : %s' % filter
+        objlist = []
+        objlist.append(highlight)
+        for conn in self:
+            if conn.conn[filter] == highlight.conn[filter]:
+                objlist.append(conn)
+                conn.highlight()
+        return objlist
+
+
 def normalize_objs(objlist):
     for object in objlist:
         object.normal()
@@ -193,12 +206,8 @@ def main_loop(connlist, pgcnx):
         if visual.scene.kb.keys: # is there an event waiting to be processed?
             s = visual.scene.kb.getkey() # obtain keyboard information
             if (len(s) == 1):
-                if (s == 'p') and (len(objlist) == 1):
-                    highlight = objlist[0]
-                    for conn in connlist:
-                        if hasattr(conn.conn, "orig_l4_dport") and hasattr(highlight, "orig_l4_dport") and conn.conn["orig_l4_dport"] == highlight.conn["orig_l4_dport"]:
-                            objlist.append(conn)
-                            conn.highlight()
+                if (s in filters_list) and (len(objlist) == 1):
+                    objlist = connlist.highlight(objlist[0], filters_list[s])
                 elif (s == 'r'):
                     connlist.refresh(pgcnx)
                 elif (s == 'c'):
