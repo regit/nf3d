@@ -112,31 +112,44 @@ class connections(list):
             self.mode = "period"
         if (not self.endtime and self.starttime and self.duration):
             self.endtime = self.starttime + self.duration
+        self.conns = []
         self.objlist = []
+        self.filter = {}
+        self.highlight_filter = {}
+        self.pgconn = None
 
     def from_pgsql(self, pgcnx, **kargs):
+        if pgcnx != None:
+            self.pgconn = pgcnx
+        # compute filter
+        query_filter = ''
+        for k in self.filter:
+            if type(self.filter[k]) == (type(1)):
+                query_filter +=  "AND " + k + "=%d" % (self.filter[k])
+            elif type(self.filter[k]) == (type('str')):
+                query_filter +=  "AND " + k + "='%s'" % (self.filter[k])
+        # Build query
         if (self.mode == "period"):
             strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, \
             flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, \
             orig_ip_saddr_str, orig_l4_sport, \
             orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
-            ct_event FROM ulog2_ct WHERE \
-            (flow_end_sec > %f AND flow_start_sec < %f) \
+            ct_event FROM ulog2_ct WHERE ((flow_end_sec > %f AND flow_start_sec < %f) \
             OR \
-            (flow_end_sec IS NULL AND flow_start_sec < %f)\
-            ORDER BY flow_start_sec DESC" % (self.starttime, self.endtime, self.endtime) 
+            (flow_end_sec IS NULL AND flow_start_sec < %f)) %s\
+            ORDER BY flow_start_sec DESC" % ( self.starttime, self.endtime, self.endtime, query_filter) 
         elif (self.mode == "duration"):
             ctime = time.time()
             strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, \
             flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str,\
             orig_ip_saddr_str, orig_l4_sport, \
             orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
-            ct_event FROM ulog2_ct WHERE flow_end_sec > %f OR flow_end_sec IS NULL\
-            ORDER BY flow_start_sec DESC" % (ctime - self.duration) 
+            ct_event FROM ulog2_ct WHERE (flow_end_sec > %f OR flow_end_sec IS NULL) %s\
+            ORDER BY flow_start_sec DESC" % (ctime - self.duration, query_filter) 
             self.starttime = ctime - self.duration
             self.endtime = ctime
 
-        conns = pgcnx.query(strquery).dictresult()
+        conns = self.pgconn.query(strquery).dictresult()
         t = 0
         self.count = len(conns)
         print "Found %d connections" % (self.count)
@@ -147,7 +160,7 @@ class connections(list):
             else:
                 conn = connection(max(0,elt["start"]-self.starttime), self.endtime-self.starttime,elt)
             conn.ordonate(t)
-            self.append(conn)
+            self.conns.append(conn)
             t += 1
 
     def length(self):
@@ -167,18 +180,20 @@ class connections(list):
             ctime = time.strftime("%H:%M:%S", time.localtime(self.starttime + GRADUATION*i))
             visual.label(pos=(field_length/GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
 
-    def refresh(self, pgnx):
+    def refresh(self):
+        self.conns = []
         self.clear()
-        self.from_pgsql(pgnx)
+        self.from_pgsql(None)
         self.plate()
 
     def highlight(self, filter):
         if len(self.objlist) != 1:
-            print "%d selected entry , unable filter" % (len(self.objlist))
+            print "%d selected entryies , unable to filter" % (len(self.objlist))
             return
-        print 'filter : %s' % filter
         highlight = self.objlist[0]
-        for conn in self:
+        self.highlight_filter = {}
+        self.highlight_filter[filter] = highlight.conn[filter]
+        for conn in self.conns:
             if conn != highlight and conn.conn[filter] == highlight.conn[filter]:
                 self.objlist.append(conn)
                 conn.highlight()
@@ -192,13 +207,23 @@ class connections(list):
         for object in self.objlist:
             object.normal()
             object.label.visible = 0
+        self.objlist = []
 
     def toggle_label(self):
         for object in self.objlist:
             object.label.visible = not object.label.visible
 
+    def apply_filter(self):
+        self.filter.update(self.highlight_filter)
+        self.refresh()
 
-def main_loop(connlist, pgcnx):
+    def reset_filter(self):
+        self.filter = {}
+        self.refresh()
+
+
+
+def main_loop(connlist):
     visual.rate(50)
 # Drag and drop loop
     while 1:
@@ -217,11 +242,16 @@ def main_loop(connlist, pgcnx):
                 if (s in filters_list):
                     connlist.highlight(filters_list[s])
                 elif (s == 'r'):
-                    connlist.refresh(pgcnx)
+                    connlist.refresh()
                 elif (s == 'c'):
                     connlist.normalize()
                 elif (s == 'l'):
                     connlist.toggle_label()
+                elif (s == 'F'):
+                    connlist.apply_filter()
+                elif (s == 'R'):
+                    connlist.reset_filter()
+
                     
 
 def usage():
@@ -261,7 +291,7 @@ def main():
     connlist = connections(start, end, duration)
     connlist.from_pgsql(pgcnx)
     connlist.plate()
-    main_loop(connlist, pgcnx)
+    main_loop(connlist)
 
 if __name__ == "__main__":
     main()
