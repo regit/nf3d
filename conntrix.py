@@ -125,6 +125,7 @@ class connections(list):
         self.highlight_filter = {}
         self.pgconn = None
         self.adaptative = False
+        self.selected = None
 
     def from_pgsql(self, pgcnx, **kargs):
         if pgcnx != None:
@@ -223,12 +224,27 @@ class connections(list):
         self.objlist = []
         self.objlist.append(c)
         c.highlight()
+        self.selected = c
+
+    def move_select(self, dir):
+        if self.selected == None:
+            self.select(self.conns[0])
+            return
+        for t in range(len(self.conns)):
+            if (self.selected == self.conns[t]):
+                self.normalize()
+                if (dir == 'up'):
+                    self.select(self.conns[t-1])
+                else:
+                    self.select(self.conns[t+1])
+                    return
 
     def normalize(self):
         for object in self.objlist:
             object.normal()
             object.label.visible = 0
         self.objlist = []
+        self.selected = None
 
     def toggle_label(self):
         for object in self.objlist:
@@ -280,7 +296,8 @@ def main_loop(connlist):
                     connlist.reset_filter()
                 elif (s == 'a'):
                     connlist.toggle_adaptative()
-
+            elif (s in ('up', 'down')):
+                connlist.move_select(s)
                     
 
 def usage():
