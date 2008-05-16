@@ -112,6 +112,7 @@ class connections(list):
             self.mode = "period"
         if (not self.endtime and self.starttime and self.duration):
             self.endtime = self.starttime + self.duration
+        self.objlist = []
 
     def from_pgsql(self, pgcnx, **kargs):
         if (self.mode == "period"):
@@ -171,47 +172,49 @@ class connections(list):
         self.from_pgsql(pgnx)
         self.plate()
 
-    def highlight(self, highlight, filter):
+    def highlight(self, filter):
+        if len(self.objlist) != 1:
+            print "%d selected entry , unable filter" % (len(self.objlist))
+            return
         print 'filter : %s' % filter
-        objlist = []
-        objlist.append(highlight)
+        highlight = self.objlist[0]
         for conn in self:
-            if conn.conn[filter] == highlight.conn[filter]:
-                objlist.append(conn)
+            if conn != highlight and conn.conn[filter] == highlight.conn[filter]:
+                self.objlist.append(conn)
                 conn.highlight()
-        return objlist
 
+    def select(self, c):
+        self.objlist = []
+        self.objlist.append(c)
+        c.highlight()
 
-def normalize_objs(objlist):
-    for object in objlist:
-        object.normal()
-        object.label.visible = 0
-    return []
+    def normalize(self):
+        for object in self.objlist:
+            object.normal()
+            object.label.visible = 0
 
 def main_loop(connlist, pgcnx):
     visual.rate(50)
-    objlist = []
 # Drag and drop loop
     while 1:
         if visual.scene.mouse.events:
             c = visual.scene.mouse.getevent()
             if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
                 if not c.shift:
-                    objlist = normalize_objs(objlist)
+                    connlist.normalize()
                 if (hasattr(c.pick, "label")):
-                    objlist.append(c.pick)
-                    c.pick.highlight()
+                    connlist.select(c.pick) 
                 else:
-                    objlist = normalize_objs(objlist)
+                    connlist.normalize()
         if visual.scene.kb.keys: # is there an event waiting to be processed?
             s = visual.scene.kb.getkey() # obtain keyboard information
             if (len(s) == 1):
-                if (s in filters_list) and (len(objlist) == 1):
-                    objlist = connlist.highlight(objlist[0], filters_list[s])
+                if (s in filters_list):
+                    connlist.highlight(filters_list[s])
                 elif (s == 'r'):
                     connlist.refresh(pgcnx)
                 elif (s == 'c'):
-                    normalize_objs(objlist)
+                    connlist.normalize()
                     
 
 def usage():
