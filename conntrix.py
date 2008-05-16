@@ -193,6 +193,11 @@ class connections(list):
             object.normal()
             object.label.visible = 0
 
+    def toggle_label(self):
+        for object in self.objlist:
+            object.label.visible = not object.label.visible
+
+
 def main_loop(connlist, pgcnx):
     visual.rate(50)
 # Drag and drop loop
@@ -215,6 +220,8 @@ def main_loop(connlist, pgcnx):
                     connlist.refresh(pgcnx)
                 elif (s == 'c'):
                     connlist.normalize()
+                elif (s == 'l'):
+                    connlist.toggle_label()
                     
 
 def usage():
