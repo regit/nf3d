@@ -89,6 +89,10 @@ class connection(visual.cylinder):
     def set_axis(self, timestamp):
         self.axis = (timestamp, 0, 0)
 
+    def set_level(self, level):
+        self.pos.x = self.pos.x - level
+        self.label.pos.x =  self.label.pos.x - level
+
     def normal(self):
         if (self.conn["ct_event"] == 1):
             self.color = self.icolor = COLOR_TCP
@@ -120,12 +124,20 @@ class connections():
         if (not self.endtime and self.starttime and self.duration):
             self.endtime = self.starttime + self.duration
         self.conns = []
+        self.container = None
         self.objlist = []
         self.filter = {}
         self.highlight_filter = {}
         self.pgconn = None
         self.adaptative = False
         self.selected = None
+        self.level = 0
+
+    def set_level(self, level):
+        self.level = level
+        for conn in self.conns:
+            conn.set_level(self.level)
+        self.container.pos.x = self.container.pos.x - self.level
 
     def from_pgsql(self, pgcnx, **kargs):
         if pgcnx != None:
@@ -178,6 +190,7 @@ class connections():
                 conn = connection(max(0,elt["start"]-self.mintime), self.endtime-self.mintime,elt)
                 maxtime = self.endtime
             self.maxtime = min(self.endtime, maxtime)
+            conn.set_level(self.level)
             conn.ordonate(t)
             self.conns.append(conn)
             t += 1
@@ -192,24 +205,20 @@ class connections():
         for obj in self.conns:
             obj.label.visible = 0
             obj.visible = 0
-        for obj in self.container:
-            obj.visible = 0
         self.conns = []
-        self.container = []
+        self.container.visible = 0
+        self.container = None
 
     def plate(self):
+        self.container = visual.frame()
         field_length =  self.length() + 2*RADIUS
         field_width = 3*RADIUS*self.count + 10
-        box = visual.box(pos = (field_length/2,-(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
-        self.container = []
-        self.container.append(box)
+        box = visual.box(frame=self.container, pos = (field_length/2 - self.level, -(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
         for i in range(GRADUATION):
-            obj = visual.curve(pos=[(field_length/GRADUATION*i,-(RADIUS+1)+1,0), (field_length/GRADUATION*i,-(RADIUS+1)+1,field_width)])
-            self.container.append(obj)
+            obj = visual.curve(frame=self.container, pos=[(field_length/GRADUATION*i - self.level, -(RADIUS+1)+1,0), (field_length/GRADUATION*i - self.level,-(RADIUS+1)+1,field_width)])
         for i in range(GRADUATION/TICK+1):
             ctime = time.strftime("%H:%M:%S", time.localtime(self.starttime + GRADUATION*TICK*i))
-            obj = visual.label(pos=(field_length/GRADUATION*TICK*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
-            self.container.append(obj)
+            obj = visual.label(frame=self.container, pos=(field_length/GRADUATION*TICK*i - self.level, -(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
 
     def refresh(self):
         self.clear()
@@ -272,15 +281,18 @@ class connections():
         self.adaptative = not self.adaptative
         self.refresh()
 
-
-
-def main_loop(connlist):
+def main_loop(connlists):
     visual.rate(50)
 # Drag and drop loop
+    connlist = connlists[0]
     while 1:
         if visual.scene.mouse.events:
             c = visual.scene.mouse.getevent()
             if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
+                for connl in connlists:
+                    if c.pick in connl.conns:
+                        connlist = connl
+                        break
                 if not c.shift:
                     connlist.normalize()
                 if (hasattr(c.pick, "label")):
@@ -295,18 +307,26 @@ def main_loop(connlist):
                 elif (s == 'r'):
                     connlist.refresh()
                 elif (s == 'c'):
-                    connlist.normalize()
+                    for connsl in connlists:
+                        connsl.normalize()
                 elif (s == 'l'):
-                    connlist.toggle_label()
+                    for connsl in connlists:
+                        connsl.toggle_label()
                 elif (s == 'F'):
                     connlist.apply_filter()
                 elif (s == 'R'):
                     connlist.reset_filter()
                 elif (s == 'a'):
                     connlist.toggle_adaptative()
+                elif (s == 'C'):
+                    for connsl in connlists:
+                        connsl.set_level(connsl.length()+100*RADIUS)
+                    newconns = connections(connlist.starttime, connlist.endtime, connlist.duration)
+                    newconns.from_pgsql(connlist.pgconn)
+                    newconns.plate()
+                    connlists.append(newconns)
             elif (s in ('up', 'down')):
                 connlist.move_select(s)
-                    
 
 def usage():
     print "conntrix.py [-h] [-s START] [-e END] [-d DURATION]\n"
@@ -345,7 +365,9 @@ def main():
     connlist = connections(start, end, duration)
     connlist.from_pgsql(pgcnx)
     connlist.plate()
-    main_loop(connlist)
+    connlists = []
+    connlists.append(connlist)
+    main_loop(connlists)
 
 if __name__ == "__main__":
     main()
