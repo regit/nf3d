@@ -32,6 +32,8 @@ import sys
 import getopt
 import time
 
+TIME_STEP = 60
+
 COLOR = (0.5,0.5,1)
 COLOR_TCP = (0.5,0.7,0.5)
 COLOR_UDP = (0.5, 0.5, 0.7)
@@ -282,6 +284,16 @@ class connections():
         self.adaptative = not self.adaptative
         self.refresh()
 
+    def move_time(self, s):
+        self.mode = 'period'
+        if (s == 'right'):
+            timeshift = TIME_STEP
+        else:
+            timeshift = - TIME_STEP
+        self.starttime += timeshift
+        self.endtime += timeshift
+        self.refresh()
+
 def main_loop(connlists):
     visual.rate(50)
 # Drag and drop loop
@@ -339,6 +351,10 @@ def main_loop(connlists):
                         print "Will not destroy to avoid null display"
             elif (s in ('up', 'down')):
                 connlist.move_select(s)
+            elif (s in ('left', 'right')):
+                connlist.move_time(s)
+            else:
+                print "Key pressed: %s" % (s)
 
 def usage():
     print "conntrix.py [-h] [-s START] [-e END] [-d DURATION]\n"
