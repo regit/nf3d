@@ -1,0 +1,68 @@
+======
+fwtron
+======
+
+Introduction
+============
+
+fwtron is a Netfilter log vizualisation tool. It displays connections in a
+GANTT diagram fashion.
+
+Prerequisites
+=============
+
+fwtron is currently using ulogd2 pgsql output to read information. You will
+thus need a working ulogd2 setup to be able to use this tool.
+
+Installation
+============
+
+fwtron is using visual python and pygresql. You will need them to run the script.
+On debian, you can install them by typing ::
+
+	aptitude install python-visual python-pygresql
+
+Now simply edit the start of the script to sync it with your database setup.
+
+Running it
+==========
+
+./fwtron.py -h will return an usage message.
+
+To display connection over one hour period ::
+
+	./fwtron.py -d 3600
+
+Keyboard usage
+--------------
+Global
+~~~~~~
+ 
+ * 'c': switch highlighted connections to normal
+ * 'l': toggle label fisplay on selected items
+ * 'r': refresh current connection table
+ * right arrow: move time window right
+ * left arrow: move time window left
+
+Selection
+~~~~~~~~~
+
+Click on a selection to highlight it and you can now use selection feature. Pressing the
+following key will highlight all connections matching filter
+ * 'd': original destination IP
+ * 's': original source IP
+ * 'p': original destination port
+ * 'P': original source port
+
+original is referring to the existence of original and reply IP tuple in Netfilter conntrack.
+
+Connections lists handling
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can modify the displayed connections by using filter:
+ * 'F': only display highlighted connections
+ * 'R': reset filter and display all connections in the time window
+
+You can also duplicate connections to be able to compare different time window or filter:
+ * 'C': duplicate the selected connections list
+ * 'D': delete the selected connections list
