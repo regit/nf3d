@@ -142,16 +142,29 @@ class connections():
             conn.set_level(self.level)
         self.container.pos.x = self.container.pos.x - self.level
 
+    def build_str_filter(self, sep, prefix=''):
+        query_filter = ''
+        i = 0
+        for k in self.filter:
+            if (i>0):
+                query_filter +=  sep 
+            else:
+                if (prefix != ''):
+                    query_filter = prefix
+                else:
+                    query_filter +=  sep 
+            if type(self.filter[k]) == (type(1)):
+                query_filter += k + "=%d" % (self.filter[k])
+            elif type(self.filter[k]) == (type('str')):
+                query_filter += k + "='%s'" % (self.filter[k])
+            i += 1
+        return query_filter
+        
     def from_pgsql(self, pgcnx, **kargs):
         if pgcnx != None:
             self.pgconn = pgcnx
         # compute filter
-        query_filter = ''
-        for k in self.filter:
-            if type(self.filter[k]) == (type(1)):
-                query_filter +=  "AND " + k + "=%d" % (self.filter[k])
-            elif type(self.filter[k]) == (type('str')):
-                query_filter +=  "AND " + k + "='%s'" % (self.filter[k])
+        query_filter = self.build_str_filter(" AND ")
         # Build query
         if (self.mode == "period"):
             strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, \
@@ -218,12 +231,16 @@ class connections():
         field_length =  self.length() + 2*RADIUS
         field_width = 3*RADIUS*self.count + 10
         visual.box(frame=self.container, pos = (field_length/2 - self.level, -(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
+
+        desctext = 'From %s to %s\n' % (time.strftime("%H:%M:%S", time.localtime(self.starttime)), \
+            time.strftime("%H:%M:%S", time.localtime(self.endtime)))
+        desctext += self.build_str_filter(" and ", "Filtering on ")
+        visual.label(frame=self.container, pos = (field_length/2 - self.level, RADIUS+0.5,0), yoffset = 4*RADIUS, text = desctext)
         for i in range(GRADUATION):
             visual.curve(frame=self.container, pos=[(field_length/GRADUATION*i - self.level, -(RADIUS+1)+1,0), (field_length/GRADUATION*i - self.level,-(RADIUS+1)+1,field_width)])
         for i in range(GRADUATION/TICK+1):
             ctime = time.strftime("%H:%M:%S", time.localtime(self.starttime + GRADUATION*TICK*i))
             visual.label(frame=self.container, pos=(field_length/GRADUATION*TICK*i - self.level, -(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
-
 
     def refresh(self):
         self.clear()
