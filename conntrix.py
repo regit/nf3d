@@ -206,7 +206,8 @@ class connections():
             obj.label.visible = 0
             obj.visible = 0
         self.conns = []
-        self.container.visible = 0
+        for obj in self.container.objects:
+            obj.visible = 0
         self.container = None
 
     def plate(self):
@@ -320,11 +321,22 @@ def main_loop(connlists):
                     connlist.toggle_adaptative()
                 elif (s == 'C'):
                     for connsl in connlists:
-                        connsl.set_level(connsl.length()+100*RADIUS)
+                        connsl.set_level(connlist.length()+100*RADIUS)
                     newconns = connections(connlist.starttime, connlist.endtime, connlist.duration)
                     newconns.from_pgsql(connlist.pgconn)
                     newconns.plate()
                     connlists.append(newconns)
+                elif (s == 'D'):
+                    if (len(connlists) > 1):
+                        connlist.clear()
+                        for connsl in connlists:
+                            if (connsl == connlist):
+                                break
+                            connsl.set_level(-(connlist.length()+100*RADIUS))
+                        connlists.remove(connlist)
+                        connlist = connlists[0]
+                    else:
+                        print "Will not destroy to avoid null display"
             elif (s in ('up', 'down')):
                 connlist.move_select(s)
 
