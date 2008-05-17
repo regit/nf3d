@@ -321,7 +321,7 @@ def main_loop(connlists):
                     connlist.toggle_adaptative()
                 elif (s == 'C'):
                     for connsl in connlists:
-                        connsl.set_level(connlist.length()+100*RADIUS)
+                        connsl.set_level(connlist.length()+15*RADIUS)
                     newconns = connections(connlist.starttime, connlist.endtime, connlist.duration)
                     newconns.from_pgsql(connlist.pgconn)
                     newconns.plate()
