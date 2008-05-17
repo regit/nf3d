@@ -357,8 +357,7 @@ def main_loop(connlists):
                 print "Key pressed: %s" % (s)
 
 def usage():
-    print "conntrix.py [-h] [-s START] [-e END] [-d DURATION]\n"
-
+    print "fwtron.py [-h] [-s START] [-e END] [-d DURATION]\n"
 
 def main():
     start = 0
