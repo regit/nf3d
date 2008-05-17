@@ -41,7 +41,8 @@ HIGHLIGHT_COLOR = (1,1,1)
 BOX_COLOR = (0.5,0.5,0.5)
 RADIUS = 10 
 BORDER = 0.2
-GRADUATION = 5 
+GRADUATION = 12
+TICK = 4
 
 visual.scene.width = 800
 visual.scene.height = 600
@@ -205,8 +206,9 @@ class connections():
         for i in range(GRADUATION):
             obj = visual.curve(pos=[(field_length/GRADUATION*i,-(RADIUS+1)+1,0), (field_length/GRADUATION*i,-(RADIUS+1)+1,field_width)])
             self.container.append(obj)
-            ctime = time.strftime("%H:%M:%S", time.localtime(self.starttime + GRADUATION*i))
-            obj = visual.label(pos=(field_length/GRADUATION*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
+        for i in range(GRADUATION/TICK+1):
+            ctime = time.strftime("%H:%M:%S", time.localtime(self.starttime + GRADUATION*TICK*i))
+            obj = visual.label(pos=(field_length/GRADUATION*TICK*i,-(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
             self.container.append(obj)
 
     def refresh(self):
