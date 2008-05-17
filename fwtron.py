@@ -46,6 +46,7 @@ BORDER = 0.2
 GRADUATION = 12
 TICK = 4
 
+visual.scene.title = "fwtron"
 visual.scene.width = 800
 visual.scene.height = 600
 visual.scene.forward = (0.25,-10.25,-10)

@@ -41,8 +41,8 @@ Global
  * 'c': switch highlighted connections to normal
  * 'l': toggle label fisplay on selected items
  * 'r': refresh current connection table
- * right arrow: move time window right
- * left arrow: move time window left
+ * down arrow: highlight next connection
+ * up arrow: highlight prev connection
 
 Selection
 ~~~~~~~~~
@@ -58,6 +58,10 @@ original is referring to the existence of original and reply IP tuple in Netfilt
 
 Connections lists handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can change the displayed time window with the following keys:
+ * right arrow: move time window right
+ * left arrow: move time window left
 
 You can modify the displayed connections by using filter:
  * 'F': only display highlighted connections
