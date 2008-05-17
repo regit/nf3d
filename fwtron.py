@@ -199,11 +199,19 @@ class connections():
         maxtime = 0
         for elt in conns:
             if (elt["end"]):
-                conn = connection(max(0, elt["start"]-self.mintime), min(elt["end"]-self.mintime, self.duration), elt)
-                if self.adaptative:
-                    maxtime = max(maxtime, elt["end"])
+                if elt["start"]:
+                    conn = connection(max(0, elt["start"]-self.mintime), min(elt["end"]-self.mintime, self.duration), elt)
+                    if self.adaptative:
+                        maxtime = max(maxtime, elt["end"])
+                else:
+                    print "No timestamp in connection, can't display !"
+                    continue
             else:
-                conn = connection(max(0,elt["start"]-self.mintime), self.endtime-self.mintime,elt)
+                if elt["start"]:
+                    conn = connection(max(0,elt["start"]-self.mintime), self.endtime-self.mintime,elt)
+                else:
+                    print "No timestamp in connection, can't display !"
+                    continue
                 maxtime = self.endtime
             self.maxtime = min(self.endtime, maxtime)
             conn.set_level(self.level)
