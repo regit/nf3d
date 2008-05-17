@@ -217,12 +217,13 @@ class connections():
         self.container = visual.frame()
         field_length =  self.length() + 2*RADIUS
         field_width = 3*RADIUS*self.count + 10
-        box = visual.box(frame=self.container, pos = (field_length/2 - self.level, -(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
+        visual.box(frame=self.container, pos = (field_length/2 - self.level, -(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
         for i in range(GRADUATION):
-            obj = visual.curve(frame=self.container, pos=[(field_length/GRADUATION*i - self.level, -(RADIUS+1)+1,0), (field_length/GRADUATION*i - self.level,-(RADIUS+1)+1,field_width)])
+            visual.curve(frame=self.container, pos=[(field_length/GRADUATION*i - self.level, -(RADIUS+1)+1,0), (field_length/GRADUATION*i - self.level,-(RADIUS+1)+1,field_width)])
         for i in range(GRADUATION/TICK+1):
             ctime = time.strftime("%H:%M:%S", time.localtime(self.starttime + GRADUATION*TICK*i))
-            obj = visual.label(frame=self.container, pos=(field_length/GRADUATION*TICK*i - self.level, -(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
+            visual.label(frame=self.container, pos=(field_length/GRADUATION*TICK*i - self.level, -(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
+
 
     def refresh(self):
         self.clear()
