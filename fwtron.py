@@ -135,6 +135,7 @@ class connections():
         self.adaptative = False
         self.selected = None
         self.level = 0
+        self.count = 0
 
     def set_level(self, level):
         self.level = level
@@ -188,8 +189,6 @@ class connections():
 
         conns = self.pgconn.query(strquery).dictresult()
         t = 0
-        self.count = len(conns)
-        print "Found %d connections" % (self.count)
         conns.sort(lambda x, y: cmp(x["start"], y["start"]))
         if self.adaptative:
             self.mintime = max(self.starttime, conns[0]["start"])
@@ -218,6 +217,8 @@ class connections():
             conn.ordonate(t)
             self.conns.append(conn)
             t += 1
+        self.count = len(self.conns)
+        print "Found %d connections" % (self.count)
 
     def length(self):
         if (self.adaptative):
