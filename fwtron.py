@@ -282,9 +282,9 @@ class connections():
             if (self.selected == self.conns[t]):
                 self.normalize()
                 if (dir == 'up'):
-                    self.select(self.conns[t-1])
+                    self.select(self.conns[(t-1) % self.count])
                 else:
-                    self.select(self.conns[t+1])
+                    self.select(self.conns[(t+1) % self.count])
                     return
 
     def normalize(self):
