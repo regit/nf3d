@@ -331,14 +331,17 @@ class connections():
             return
         highlight = self.objlist[0]
         self.highlight_filter = {}
+        self.highlight_filter[filter] = highlight.obj[filter]
         if highlight in self.conns:
-            self.highlight_filter[filter] = highlight.obj[filter]
             for conn in self.conns:
                 if conn != highlight and conn.obj[filter] == highlight.obj[filter]:
                     self.objlist.append(conn)
                     conn.highlight()
-        else:
-            print "Packet filtering is not yet implemented"
+        elif highlight in self.packets:
+            for packets in self.packets:
+                if packets != highlight and packets.obj[filter] == highlight.obj[filter]:
+                    self.objlist.append(packets)
+                    packets.highlight()
 
     def select(self, c):
         self.objlist.append(c)
