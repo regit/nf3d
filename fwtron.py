@@ -54,7 +54,60 @@ visual.scene.autocenter = 1
 
 filters_list = { 'p': 'orig_l4_dport', 'd': 'orig_ip_daddr_str', 's': 'orig_ip_saddr_str', 'P': 'orig_l4_sport' }
 
-class connection(visual.cylinder):
+class connobj():
+    """
+    generic connections list related object
+    """
+
+    def ordonate(self, index):
+        self.z = (3*RADIUS)*index
+        self.label.z = (3*RADIUS)*index
+
+    def highlight(self):
+        self.color = HIGHLIGHT_COLOR
+        self.label.visible = 1
+
+    def normal(self):
+        self.color = COLOR
+        self.label.visible = 0
+
+class packet(visual.sphere, connobj):
+    """
+    Store information about a logged packet
+    """
+
+    def __init__(self, start, pckt, **kargs):
+        visual.sphere.__init__(self, **kargs)
+        self.color = self.icolor = COLOR
+        self.radius = 1.5 * RADIUS
+        self.pos.x = start
+        self.packet = pckt
+        self.set_label()
+
+    def set_label(self):
+        txtlabel = ''
+        if (self.packet["ip_protocol"] == 6):
+            txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.packet["ip_saddr_str"], self.packet["tcp_sport"], self.packet["ip_daddr_str"], self.packet["tcp_dport"])
+            txtlabel += 'PROTO: TCP\n'
+        elif (self.packet["ip_protocol"] == 17):
+            txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.packet["ip_saddr_str"], self.packet["udp_sport"], self.packet["ip_daddr_str"], self.packet["udp_dport"])
+            txtlabel += 'PROTO: UDP\n'
+        elif (self.packet["ip_protocol"] == 1):
+            txtlabel += 'PROTO: ICMP\n'
+        if (self.packet['oob_in']):
+            txtlabel += 'IN: %s ' % (self.packet['oob_in'])
+        if (self.packet['oob_out']):
+            txtlabel += 'OUT: %s\n' % (self.packet['oob_out'])
+        else:
+            txtlabel += '\n'
+        if (self.packet['oob_prefix']):
+            txtlabel += 'PREFIX: %s' % (self.packet['oob_prefix'])
+
+        self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s' % (txtlabel))
+        self.label.visible = 0
+
+
+class connection(visual.cylinder, connobj):
     """
     Store information about a connection and related object.
     """
@@ -68,10 +121,6 @@ class connection(visual.cylinder):
         self.conn = conn
         self.set_label()
         self.normal()
-
-    def ordonate(self, index):
-        self.z = (3*RADIUS)*index
-        self.label.z = (3*RADIUS)*index
 
     def set_label(self):
         txtlabel = ''
@@ -97,14 +146,13 @@ class connection(visual.cylinder):
         self.label.pos.x =  self.label.pos.x - level
 
     def normal(self):
+        connobj.normal(self)
         if (self.conn["ct_event"] == 1):
             self.color = self.icolor = COLOR_TCP
         elif (self.conn["ct_event"] == 4):
             self.color = self.icolor = COLOR_UDP
 
-    def highlight(self):
-        self.color = HIGHLIGHT_COLOR
-        self.label.visible = 1
+
 
 class connections():
     """
@@ -127,6 +175,7 @@ class connections():
         if (not self.endtime and self.starttime and self.duration):
             self.endtime = self.starttime + self.duration
         self.conns = []
+        self.packets = []
         self.container = None
         self.objlist = []
         self.filter = {}
@@ -136,6 +185,8 @@ class connections():
         self.selected = None
         self.level = 0
         self.count = 0
+
+        self.ctiddict = {}
 
     def set_level(self, level):
         self.level = level
@@ -168,7 +219,7 @@ class connections():
         query_filter = self.build_str_filter(" AND ")
         # Build query
         if (self.mode == "period"):
-            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, \
+            strquery = "SELECT _ct_id, flow_start_sec+flow_start_usec/1000000 AS start, \
             flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, \
             orig_ip_saddr_str, orig_l4_sport, \
             orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
@@ -178,7 +229,7 @@ class connections():
             ORDER BY flow_start_sec DESC" % ( self.starttime, self.endtime, self.endtime, query_filter) 
         elif (self.mode == "duration"):
             ctime = time.time()
-            strquery = "SELECT flow_start_sec+flow_start_usec/1000000 AS start, \
+            strquery = "SELECT _ct_id, flow_start_sec+flow_start_usec/1000000 AS start, \
             flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str,\
             orig_ip_saddr_str, orig_l4_sport, \
             orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
@@ -200,6 +251,7 @@ class connections():
             if (elt["end"]):
                 if elt["start"]:
                     conn = connection(max(0, elt["start"]-self.mintime), min(elt["end"]-self.mintime, self.duration), elt)
+                    self.ctiddict[elt["_ct_id"]] = t
                     if self.adaptative:
                         maxtime = max(maxtime, elt["end"])
                 else:
@@ -208,6 +260,7 @@ class connections():
             else:
                 if elt["start"]:
                     conn = connection(max(0,elt["start"]-self.mintime), self.endtime-self.mintime,elt)
+                    self.ctiddict[elt["_ct_id"]] = int(t)
                 else:
                     print "No timestamp in connection, can't display !"
                     continue
@@ -219,6 +272,17 @@ class connections():
             t += 1
         self.count = len(self.conns)
         print "Found %d connections" % (self.count)
+        
+        #strquery = "SELECT _ct_id, oob_time_sec, oob_hook, oob_prefix, oob_mark, oob_in, oob_out  FROM ulog  JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol  AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %s" % (self.starttime)
+        strquery = "SELECT * FROM ulog  JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol  AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %f AND oob_time_sec < %f %s" % (self.starttime, self.endtime, query_filter)
+        packetlist = self.pgconn.query(strquery).dictresult()
+        for pckt in packetlist:
+            if pckt["oob_time_sec"]:
+                if (self.ctiddict.has_key(pckt["_ct_id"])):
+                    np = packet(pckt["oob_time_sec"] - self.mintime, pckt)
+                    np.ordonate(self.ctiddict[pckt["_ct_id"]])
+                    self.packets.append(np)
+
 
     def length(self):
         if (self.adaptative):
@@ -231,6 +295,10 @@ class connections():
             obj.label.visible = 0
             obj.visible = 0
         self.conns = []
+        for obj in self.packets:
+            obj.label.visible = 0
+            obj.visible = 0
+        self.packets = []
         for obj in self.container.objects:
             obj.visible = 0
         self.container = None
@@ -262,11 +330,14 @@ class connections():
             return
         highlight = self.objlist[0]
         self.highlight_filter = {}
-        self.highlight_filter[filter] = highlight.conn[filter]
-        for conn in self.conns:
-            if conn != highlight and conn.conn[filter] == highlight.conn[filter]:
-                self.objlist.append(conn)
-                conn.highlight()
+        if highlight in self.conns:
+            self.highlight_filter[filter] = highlight.conn[filter]
+            for conn in self.conns:
+                if conn != highlight and conn.conn[filter] == highlight.conn[filter]:
+                    self.objlist.append(conn)
+                    conn.highlight()
+        else:
+            print "Packet filtering is not yet implemented"
 
     def select(self, c):
         self.objlist = []
@@ -290,7 +361,6 @@ class connections():
     def normalize(self):
         for object in self.objlist:
             object.normal()
-            object.label.visible = 0
         self.objlist = []
         self.selected = None
 
@@ -331,7 +401,7 @@ def main_loop(connlists):
             c = visual.scene.mouse.getevent()
             if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
                 for connl in connlists:
-                    if c.pick in connl.conns:
+                    if c.pick in connl.conns + connl.packets:
                         connlist = connl
                         break
                 if not c.shift:
