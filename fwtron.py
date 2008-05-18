@@ -64,12 +64,17 @@ class connobj():
         self.label.z = (3*RADIUS)*index
 
     def highlight(self):
-        self.color = HIGHLIGHT_COLOR
+        self.color = self.icolor = HIGHLIGHT_COLOR
         self.label.visible = 1
 
     def normal(self):
         self.color = COLOR
         self.label.visible = 0
+
+    def set_level(self, level):
+        self.pos.x = self.pos.x - level
+        self.label.pos.x =  self.label.pos.x - level
+
 
 class packet(visual.sphere, connobj):
     """
@@ -81,27 +86,27 @@ class packet(visual.sphere, connobj):
         self.color = self.icolor = COLOR
         self.radius = 1.5 * RADIUS
         self.pos.x = start
-        self.packet = pckt
+        self.obj = pckt
         self.set_label()
 
     def set_label(self):
         txtlabel = ''
-        if (self.packet["ip_protocol"] == 6):
-            txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.packet["ip_saddr_str"], self.packet["tcp_sport"], self.packet["ip_daddr_str"], self.packet["tcp_dport"])
+        if (self.obj["ip_protocol"] == 6):
+            txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.obj["ip_saddr_str"], self.obj["tcp_sport"], self.obj["ip_daddr_str"], self.obj["tcp_dport"])
             txtlabel += 'PROTO: TCP\n'
-        elif (self.packet["ip_protocol"] == 17):
-            txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.packet["ip_saddr_str"], self.packet["udp_sport"], self.packet["ip_daddr_str"], self.packet["udp_dport"])
+        elif (self.obj["ip_protocol"] == 17):
+            txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.obj["ip_saddr_str"], self.obj["udp_sport"], self.obj["ip_daddr_str"], self.obj["udp_dport"])
             txtlabel += 'PROTO: UDP\n'
-        elif (self.packet["ip_protocol"] == 1):
+        elif (self.obj["ip_protocol"] == 1):
             txtlabel += 'PROTO: ICMP\n'
-        if (self.packet['oob_in']):
-            txtlabel += 'IN: %s ' % (self.packet['oob_in'])
-        if (self.packet['oob_out']):
-            txtlabel += 'OUT: %s\n' % (self.packet['oob_out'])
+        if (self.obj['oob_in']):
+            txtlabel += 'IN: %s ' % (self.obj['oob_in'])
+        if (self.obj['oob_out']):
+            txtlabel += 'OUT: %s\n' % (self.obj['oob_out'])
         else:
             txtlabel += '\n'
-        if (self.packet['oob_prefix']):
-            txtlabel += 'PREFIX: %s' % (self.packet['oob_prefix'])
+        if (self.obj['oob_prefix']):
+            txtlabel += 'PREFIX: %s' % (self.obj['oob_prefix'])
 
         self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s' % (txtlabel))
         self.label.visible = 0
@@ -118,38 +123,34 @@ class connection(visual.cylinder, connobj):
         self.color = self.icolor = COLOR
         self.radius = RADIUS
         self.axis = (end - start,0,0)
-        self.conn = conn
+        self.obj = conn
         self.set_label()
         self.normal()
 
     def set_label(self):
         txtlabel = ''
-        if (self.conn["orig_ip_protocol"] in (6,17)):
-            txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.conn["orig_ip_saddr_str"], self.conn["orig_l4_sport"], self.conn["orig_ip_daddr_str"], self.conn["orig_l4_dport"])
-        if (self.conn["orig_ip_protocol"] == 6):
+        if (self.obj["orig_ip_protocol"] in (6,17)):
+            txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.obj["orig_ip_saddr_str"], self.obj["orig_l4_sport"], self.obj["orig_ip_daddr_str"], self.obj["orig_l4_dport"])
+        if (self.obj["orig_ip_protocol"] == 6):
             txtlabel += 'PROTO: TCP'
-        elif (self.conn["orig_ip_protocol"] == 17):
+        elif (self.obj["orig_ip_protocol"] == 17):
             txtlabel += 'PROTO: UDP'
-        elif (self.conn["orig_ip_protocol"] == 1):
+        elif (self.obj["orig_ip_protocol"] == 1):
             txtlabel += 'PROTO: ICMP'
-        if (self.conn["ct_event"] == 1):
+        if (self.obj["ct_event"] == 1):
             self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s' % (txtlabel))
-        elif (self.conn["ct_event"] == 4):
-            self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s\nIN: %d, OUT: %d bits\nDURATION: %f sec' % (txtlabel, self.conn["reply_raw_pktlen"],self.conn["orig_raw_pktlen"]  , self.axis.x))
+        elif (self.obj["ct_event"] == 4):
+            self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s\nIN: %d, OUT: %d bits\nDURATION: %f sec' % (txtlabel, self.obj["reply_raw_pktlen"],self.obj["orig_raw_pktlen"]  , self.axis.x))
         self.label.visible = 0
 
     def set_axis(self, timestamp):
         self.axis = (timestamp, 0, 0)
 
-    def set_level(self, level):
-        self.pos.x = self.pos.x - level
-        self.label.pos.x =  self.label.pos.x - level
-
     def normal(self):
         connobj.normal(self)
-        if (self.conn["ct_event"] == 1):
+        if (self.obj["ct_event"] == 1):
             self.color = self.icolor = COLOR_TCP
-        elif (self.conn["ct_event"] == 4):
+        elif (self.obj["ct_event"] == 4):
             self.color = self.icolor = COLOR_UDP
 
 
@@ -190,8 +191,8 @@ class connections():
 
     def set_level(self, level):
         self.level = level
-        for conn in self.conns:
-            conn.set_level(self.level)
+        for obj in self.conns + self.packets:
+            obj.set_level(self.level)
         self.container.pos.x = self.container.pos.x - self.level
 
     def build_str_filter(self, sep, prefix=''):
@@ -331,9 +332,9 @@ class connections():
         highlight = self.objlist[0]
         self.highlight_filter = {}
         if highlight in self.conns:
-            self.highlight_filter[filter] = highlight.conn[filter]
+            self.highlight_filter[filter] = highlight.obj[filter]
             for conn in self.conns:
-                if conn != highlight and conn.conn[filter] == highlight.conn[filter]:
+                if conn != highlight and conn.obj[filter] == highlight.obj[filter]:
                     self.objlist.append(conn)
                     conn.highlight()
         else:
