@@ -340,7 +340,6 @@ class connections():
             print "Packet filtering is not yet implemented"
 
     def select(self, c):
-        self.objlist = []
         self.objlist.append(c)
         c.highlight()
         self.selected = c
