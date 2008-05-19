@@ -317,7 +317,7 @@ class connections():
         for i in range(GRADUATION):
             visual.curve(frame=self.container, pos=[(field_length/GRADUATION*i - self.level, -(RADIUS+1)+1,0), (field_length/GRADUATION*i - self.level,-(RADIUS+1)+1,field_width)])
         for i in range(GRADUATION/TICK+1):
-            ctime = time.strftime("%H:%M:%S", time.localtime(self.starttime + GRADUATION*TICK*i))
+            ctime = time.strftime("%H:%M:%S", time.localtime(self.mintime + field_length/GRADUATION*TICK*i))
             visual.label(frame=self.container, pos=(field_length/GRADUATION*TICK*i - self.level, -(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
 
     def refresh(self):
