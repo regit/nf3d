@@ -24,6 +24,9 @@ PORT = 5432
 LOGIN ='ulog2'
 PASSWORD ='ulog2'
 
+# configuration
+DISPLAY_PACKETS = True
+
 import visual
 from random import uniform, randint
 
@@ -274,15 +277,15 @@ class connections():
         self.count = len(self.conns)
         print "Found %d connections" % (self.count)
         
-        #strquery = "SELECT _ct_id, oob_time_sec, oob_hook, oob_prefix, oob_mark, oob_in, oob_out  FROM ulog  JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol  AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %s" % (self.starttime)
-        strquery = "SELECT * FROM ulog  JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol  AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %f AND oob_time_sec < %f %s" % (self.starttime, self.endtime, query_filter)
-        packetlist = self.pgconn.query(strquery).dictresult()
-        for pckt in packetlist:
-            if pckt["oob_time_sec"]:
-                if (self.ctiddict.has_key(pckt["_ct_id"])):
-                    np = packet(pckt["oob_time_sec"] - self.mintime, pckt)
-                    np.ordonate(self.ctiddict[pckt["_ct_id"]])
-                    self.packets.append(np)
+        if DISPLAY_PACKETS:
+            strquery = "SELECT * FROM ulog  JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol  AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %f AND oob_time_sec < %f %s" % (self.starttime, self.endtime, query_filter)
+            packetlist = self.pgconn.query(strquery).dictresult()
+            for pckt in packetlist:
+                if pckt["oob_time_sec"]:
+                    if (self.ctiddict.has_key(pckt["_ct_id"])):
+                        np = packet(pckt["oob_time_sec"] - self.mintime, pckt)
+                        np.ordonate(self.ctiddict[pckt["_ct_id"]])
+                        self.packets.append(np)
 
 
     def length(self):
