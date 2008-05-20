@@ -46,7 +46,7 @@ BORDER = 0.2
 GRADUATION = 12
 TICK = 4
 
-visual.scene.title = "fwtron"
+visual.scene.title = "nf3d: 3D Netfilter visualization"
 visual.scene.width = 800
 visual.scene.height = 600
 visual.scene.forward = (0.25,-10.25,-10)
@@ -458,7 +458,7 @@ def main_loop(connlists):
                 print "Key pressed: %s" % (s)
 
 def usage():
-    print "fwtron.py [-h] [-s START] [-e END] [-d DURATION]\n"
+    print "nf3d [-h] [-s START] [-e END] [-d DURATION]\n"
 
 def main():
     start = 0

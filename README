@@ -1,23 +1,23 @@
-======
-fwtron
-======
+====
+nf3d
+====
 
 Introduction
 ============
 
-fwtron is a Netfilter log vizualisation tool. It displays connections in a
-GANTT diagram fashion.
+nf3d is a Netfilter izualisation tool. It displays connections and logged 
+logged packets in a GANTT diagram fashion.
 
 Prerequisites
 =============
 
-fwtron is currently using ulogd2 pgsql output to read information. You will
+nf3d is currently using ulogd2 pgsql output to read information. You will
 thus need a working ulogd2 setup to be able to use this tool.
 
 Installation
 ============
 
-fwtron is using visual python and pygresql. You will need them to run the script.
+nf3d is using visual python and pygresql. You will need them to run the script.
 On debian, you can install them by typing ::
 
 	aptitude install python-visual python-pygresql
@@ -27,11 +27,11 @@ Now simply edit the start of the script to sync it with your database setup.
 Running it
 ==========
 
-./fwtron.py -h will return an usage message.
+./nf3d.py -h will return an usage message.
 
 To display connection over one hour period ::
 
-	./fwtron.py -d 3600
+	./nf3d.py -d 3600
 
 Keyboard usage
 --------------
