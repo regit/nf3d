@@ -114,6 +114,14 @@ class packet(visual.sphere, connobj):
         self.label = visual.label(pos=self.pos, xoffset = -10, yoffset = 10,  text='%s' % (txtlabel))
         self.label.visible = 0
 
+    def normal(self):
+        connobj.normal(self)
+        self.radius = 1.5 * RADIUS
+
+    def highlight(self):
+        connobj.highlight(self)
+        self.radius += 0.2 
+
 
 class connection(visual.cylinder, connobj):
     """
@@ -278,12 +286,12 @@ class connections():
         print "Found %d connections" % (self.count)
         
         if DISPLAY_PACKETS:
-            strquery = "SELECT * FROM ulog  JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol  AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %f AND oob_time_sec < %f %s" % (self.starttime, self.endtime, query_filter)
+            strquery = "SELECT oob_time_sec+oob_time_usec/1000000 AS timestamp, * FROM ulog  JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %f AND oob_time_sec < %f %s" % (self.starttime, self.endtime, query_filter)
             packetlist = self.pgconn.query(strquery).dictresult()
             for pckt in packetlist:
-                if pckt["oob_time_sec"]:
+                if pckt["timestamp"]:
                     if (self.ctiddict.has_key(pckt["_ct_id"])):
-                        np = packet(pckt["oob_time_sec"] - self.mintime, pckt)
+                        np = packet(pckt["timestamp"] - self.mintime, pckt)
                         np.ordonate(self.ctiddict[pckt["_ct_id"]])
                         self.packets.append(np)
 
