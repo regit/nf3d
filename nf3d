@@ -355,13 +355,20 @@ class connections():
         if self.selected == None:
             self.select(self.conns[0])
             return
-        for t in range(len(self.conns)):
-            if (self.selected == self.conns[t]):
+        if self.selected in self.conns:
+            objlist = self.conns
+        elif self.selected in self.packets:
+            objlist = self.packets
+        else:
+            print "Unknown object type"
+            return
+        for t in range(len(objlist)):
+            if (self.selected == objlist[t]):
                 self.normalize()
                 if (dir == 'up'):
-                    self.select(self.conns[(t-1) % self.count])
+                    self.select(objlist[(t-1) % len(objlist)])
                 else:
-                    self.select(self.conns[(t+1) % self.count])
+                    self.select(objlist[(t+1) % len(objlist)])
                     return
 
     def normalize(self):
