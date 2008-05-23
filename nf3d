@@ -255,7 +255,11 @@ class connections():
 
         if DISPLAY_QUERY:
             print strquery
-        conns = self.pgconn.query(strquery).dictresult()
+        try:
+            conns = self.pgconn.query(strquery).dictresult()
+        except(pg.ProgrammingError):
+            print "Bad request, maybe filter is wrong"
+            return
         t = 0
         conns.sort(lambda x, y: cmp(x["start"], y["start"]))
         if self.adaptative:
@@ -478,12 +482,36 @@ def main_loop(connlists):
                         print "Will not destroy to avoid null display"
                 elif (s == '?'):
                     help()
+                elif (s == ':'):
+                    interactive_filter(connlist)
             elif (s in ('up', 'down')):
                 connlist.move_select(s)
             elif (s in ('left', 'right')):
                 connlist.move_time(s)
             else:
                 print "Key pressed: %s" % (s)
+
+def interactive_filter(connlist):
+    print "Please give filter (key=value)"
+    cmd = sys.stdin.readline()
+    try:
+        (k, v) = cmd.split('=')
+    except:
+        print "Syntax is 'key=value'"
+        return
+    filter_elt = {}
+    if (filters_list.has_key(k) and v):
+        connlist.highlight_filter = {}
+        if (v.isdigit()):
+            connlist.highlight_filter[filters_list[k]] = v
+        else:
+            connlist.highlight_filter[filters_list[k]] = v.strip()
+        try:
+            connlist.apply_filter()
+        except:
+            print "Invalid filter command: %s" % (cmd)
+    else:
+        print "Unknown key in command: %s" % (cmd)
 
 def usage():
     print "nf3d [-h] [-s START] [-e END] [-d DURATION]\n"
