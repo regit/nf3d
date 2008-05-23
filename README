@@ -6,7 +6,7 @@ Introduction
 ============
 
 nf3d is a Netfilter izualisation tool. It displays connections and logged 
-logged packets in a GANTT diagram fashion.
+packets in a GANTT diagram fashion.
 
 Prerequisites
 =============
@@ -29,7 +29,7 @@ Running it
 
 ./nf3d.py -h will return an usage message.
 
-To display connection over one hour period ::
+To display connections and logged packets over one hour period ::
 
 	./nf3d.py -d 3600
 
@@ -38,11 +38,12 @@ Keyboard usage
 Global
 ~~~~~~
  
- * 'c': switch highlighted connections to normal
+ * 'c': switch highlighted items to normal
  * 'l': toggle label fisplay on selected items
  * 'r': refresh current connection table
- * down arrow: highlight next connection
- * up arrow: highlight prev connection
+ * down arrow: highlight next item
+ * up arrow: highlight prev item
+ * '?': display help message
 
 Selection
 ~~~~~~~~~
@@ -68,5 +69,5 @@ You can modify the displayed connections by using filter:
  * 'R': reset filter and display all connections in the time window
 
 You can also duplicate connections to be able to compare different time window or filter:
- * 'C': duplicate the selected connections list
- * 'D': delete the selected connections list
+ * 'C': duplicate the selected table
+ * 'D': delete the selected table
