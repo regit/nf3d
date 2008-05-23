@@ -167,7 +167,12 @@ class connection(visual.cylinder, connobj):
         elif (self.obj["ct_event"] == 4):
             self.color = self.icolor = COLOR_UDP
 
-
+def conn_comp(x,y,criter):
+    ret = cmp(x.obj[criter], y.obj[criter])
+    if (ret == 0):
+        return cmp(x.obj["start"], y.obj["start"])
+    else:
+        return ret
 
 class connections():
     """
@@ -200,6 +205,8 @@ class connections():
         self.selected = None
         self.level = 0
         self.count = 0
+        self.ordered = False
+        self.orderby = None
 
         self.ctiddict = {}
 
@@ -268,6 +275,8 @@ class connections():
             self.mintime = self.starttime
             self.maxtime = self.endtime
         maxtime = 0
+        #if self.ordered and self.orderby:
+        #    conns.sort(lambda x, y: conn_comp(x,y,self.orderby))
         for elt in conns:
             if (elt["end"]):
                 if elt["start"]:
@@ -366,6 +375,28 @@ class connections():
                     self.objlist.append(packets)
                     packets.highlight()
 
+    def order(self):
+        if (self.ordered):
+            self.conns.sort(lambda x, y: conn_comp(x,y,self.orderby))
+        else:
+            self.conns.sort(lambda x,y: cmp(x.obj['start'], y.obj['start']))
+        t = 0
+        for conn in self.conns:
+            conn.ordonate(t)
+            self.ctiddict[conn.obj["_ct_id"]] = t
+            t += 1
+        for np in self.packets:
+            np.ordonate(self.ctiddict[np.obj["_ct_id"]])
+        
+
+    def switch_order(self):
+        if (self.highlight_filter):
+            self.orderby = self.highlight_filter.keys()[0]
+        else:
+            return
+        self.ordered = not self.ordered
+        self.order()
+
     def select(self, c):
         self.objlist.append(c)
         c.highlight()
@@ -458,6 +489,8 @@ def main_loop(connlists):
                         connsl.toggle_label()
                 elif (s == 'F'):
                     connlist.apply_filter()
+                elif (s == 'O'):
+                    connlist.switch_order()
                 elif (s == 'R'):
                     connlist.reset_filter()
                 elif (s == 'a'):
