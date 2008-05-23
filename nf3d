@@ -350,7 +350,7 @@ class connections():
 
     def highlight(self, filter):
         if len(self.objlist) != 1:
-            print "%d selected entryies , unable to filter" % (len(self.objlist))
+            print "%d selected entries , unable to filter" % (len(self.objlist))
             return
         highlight = self.objlist[0]
         self.highlight_filter = {}
@@ -535,6 +535,7 @@ left arrow: move time window left
 'C': duplicate the selected connections list
 'D': delete the selected connections list
 '?': display this help message
+':': interactive filter
 """
 def main():
     start = 0
