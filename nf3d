@@ -27,6 +27,9 @@ PASSWORD ='ulog2'
 # configuration
 DISPLAY_PACKETS = True
 
+# debug
+DISPLAY_QUERY = False
+
 import visual
 from random import uniform, randint
 
@@ -250,6 +253,8 @@ class connections():
             self.starttime = ctime - self.duration
             self.endtime = ctime
 
+        if DISPLAY_QUERY:
+            print strquery
         conns = self.pgconn.query(strquery).dictresult()
         t = 0
         conns.sort(lambda x, y: cmp(x["start"], y["start"]))
@@ -287,6 +292,9 @@ class connections():
         
         if DISPLAY_PACKETS:
             strquery = "SELECT oob_time_sec+oob_time_usec/1000000 AS timestamp, * FROM ulog  JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %f AND oob_time_sec < %f %s" % (self.starttime, self.endtime, query_filter)
+
+            if DISPLAY_QUERY:
+                print strquery
             packetlist = self.pgconn.query(strquery).dictresult()
             for pckt in packetlist:
                 if pckt["timestamp"]:
@@ -468,6 +476,8 @@ def main_loop(connlists):
                         connlist = connlists[0]
                     else:
                         print "Will not destroy to avoid null display"
+                elif (s == '?'):
+                    help()
             elif (s in ('up', 'down')):
                 connlist.move_select(s)
             elif (s in ('left', 'right')):
@@ -478,6 +488,26 @@ def main_loop(connlists):
 def usage():
     print "nf3d [-h] [-s START] [-e END] [-d DURATION]\n"
 
+def help():
+    print """
+Keyboard shortcuts:\n
+'c': switch highlighted items to normal
+'l': toggle label fisplay on selected items
+'r': refresh datas
+down arrow: highlight next item
+up arrow: highlight prev item
+'d': highlight item with same original destination IP
+'s': highlight item with same original source IP
+'p': highlight item with same original destination port
+'P': highlight item with same original source port
+right arrow: move time window right
+left arrow: move time window left
+'F': only display highlighted connections
+'R': reset filter and display all connections in the time window
+'C': duplicate the selected connections list
+'D': delete the selected connections list
+'?': display this help message
+"""
 def main():
     start = 0
     end = 0
