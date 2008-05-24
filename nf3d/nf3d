@@ -218,9 +218,9 @@ class connections():
             i += 1
         return query_filter
         
-    def from_pgsql(self, pgcnx, **kargs):
-        if pgcnx != None:
-            self.pgconn = pgcnx
+    def from_pgsql(self, **kargs):
+        if kargs.has_key('conn'):
+            self.pgconn = kargs['conn']
         # compute filter
         query_filter = self.build_str_filter(" AND ")
         # Build query
@@ -377,9 +377,13 @@ class connections():
             ctime = time.strftime("%H:%M:%S", time.localtime(self.mintime + field_length/self.config['display']['graduation']*self.config['display']['tick']*i))
             visual.label(frame=self.container, pos=(field_length/self.config['display']['graduation']*self.config['display']['tick']*i - self.level, -(self.config['display']['radius']+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*self.config['display']['radius'])
 
+    def build(self, **kargs):
+        if (self.config['global']['input'] == 'database') and (self.config['database']['type'] == 'pgsql'):
+            self.from_pgsql(**kargs)
+
     def refresh(self):
         self.clear()
-        self.from_pgsql(None)
+        self.build()
         self.order()
         self.plate()
 
@@ -536,7 +540,7 @@ def main_loop(connlists):
                     for connsl in connlists:
                         connsl.set_level(connlist.length()+15*self.config['display']['radius'])
                     newconns = connections(connlist.starttime, connlist.endtime, connlist.duration)
-                    newconns.from_pgsql(connlist.pgconn)
+                    newconns.build(conn = connlist.pgconn)
                     newconns.plate()
                     connlists.append(newconns)
                 elif (s == 'D'):
@@ -662,7 +666,7 @@ def main():
             int(nf3dconfig['database']['port']), None, None, \
             nf3dconfig['database']['login'], nf3dconfig['database']['password'])
     connlist = connections(start, end, duration, nf3dconfig)
-    connlist.from_pgsql(pgcnx)
+    connlist.build(conn = pgcnx)
     connlist.plate()
     connlists = []
     connlists.append(connlist)
