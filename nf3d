@@ -207,6 +207,7 @@ class connections():
         self.count = 0
         self.ordered = False
         self.orderby = None
+        self.ordercontainer = visual.frame()
 
         self.ctiddict = {}
 
@@ -355,6 +356,7 @@ class connections():
     def refresh(self):
         self.clear()
         self.from_pgsql(None)
+        self.order()
         self.plate()
 
     def highlight(self, filter):
@@ -387,14 +389,34 @@ class connections():
             t += 1
         for np in self.packets:
             np.ordonate(self.ctiddict[np.obj["_ct_id"]])
+        if (self.ordered):
+            init = self.conns[0].obj[self.orderby]
+            t = -1
+            if (self.ordercontainer):
+                for obj in self.ordercontainer.objects:
+                    obj.visible = 0
+            self.ordercontainer = visual.frame()
+            for conn in self.conns:
+                if (init != conn.obj[self.orderby]):
+                    init = conn.obj[self.orderby]
+                    visual.curve(frame=self.ordercontainer, pos=[(-self.level, -(RADIUS+1)+5,3*RADIUS*t+RADIUS), (self.length()-self.level,-(RADIUS+1)+1,3*RADIUS*t+RADIUS)])
+                t += 1
+        else:
+            for obj in self.ordercontainer.objects:
+                obj.visible = 0
+
         
 
     def switch_order(self):
+        self.normalize()
         if (self.highlight_filter):
-            self.orderby = self.highlight_filter.keys()[0]
+            if (self.orderby != self.highlight_filter.keys()[0]):
+                self.ordered = True
+                self.orderby = self.highlight_filter.keys()[0]
+            else:
+                self.ordered = not self.ordered
         else:
             return
-        self.ordered = not self.ordered
         self.order()
 
     def select(self, c):
