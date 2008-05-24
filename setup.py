@@ -52,7 +52,7 @@ setup(
     license='GPLv3',
     description=DESCRIPTION,
     classifiers=CLASSIFIERS,
-    url='http://software.inl.fr/wiki/nf3d'
+    url='http://software.inl.fr/wiki/nf3d',
     author="Eric Leblond",
     author_email="eric@inl.fr",
     keywords=KEYWORDS,
