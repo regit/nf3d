@@ -26,7 +26,7 @@ from validate import Validator
 import pkg_resources
 import visual
 
-from nf3d.connobj import packet, connection, connections
+from nf3d.connobj import packet, connection, connections, filters_list
 
 def main_loop(connlists):
     visual.rate(50)
