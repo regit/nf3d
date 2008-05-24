@@ -39,9 +39,9 @@ setup(
     author="Eric Leblond",
     author_email="eric@inl.fr",
     keywords=KEYWORDS,
-    packages=["nf3d"],
-    platforms=['Linux'],
-    package_dir={"nf3d"},
-    scripts=["nf3d/nf3d"],
+    packages=['nf3d'],
+    package_dir={'nf3d':'nf3d'},
+    package_data={'nf3d':['nf3dspec.conf']},
+    scripts=['nf3d/nf3d'],
     **option)
 

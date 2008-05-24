@@ -20,18 +20,21 @@ Installation
 nf3d is using visual python and pygresql. You will need them to run the script.
 On debian, you can install them by typing ::
 
-	aptitude install python-visual python-pygresql
+	aptitude install python-visual python-pygresql python-configobj python-setuptools
 
-Now simply edit the start of the script to sync it with your database setup.
+Then go to nf3d directory and type ::
+
+	python ./setup.py install
+	cp nf3d.conf /etc/nf3d.conf
 
 Running it
 ==========
 
-./nf3d.py -h will return an usage message.
+nf3d -h will return an usage message.
 
 To display connections and logged packets over one hour period ::
 
-	./nf3d.py -d 3600
+	nf3d -d 3600
 
 Keyboard usage
 --------------

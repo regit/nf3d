@@ -17,47 +17,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 """
 
-# SETUP YOUR DATABASE HERE
-DATABASE='ulog2'
-HOST = 'localhost'
-PORT = 5432
-LOGIN ='ulog2'
-PASSWORD ='ulog2'
-
-# configuration
-DISPLAY_PACKETS = True
-
-# debug
-DISPLAY_QUERY = False
-
 import visual
-from random import uniform, randint
+from configobj import ConfigObj
+from validate import Validator
+import pkg_resources
 
 import pg
 import sys
+import os
 import getopt
 import time
-
-TIME_STEP = 60
-
-COLOR = (0.5,0.5,1)
-COLOR_TCP = (0.5,0.7,0.5)
-COLOR_UDP = (0.5, 0.5, 0.7)
-START_COLOR = (0.5,1,0.5)
-END_COLOR = (1,0.5,0.5)
-HIGHLIGHT_COLOR = (1,1,1)
-BOX_COLOR = (0.5,0.5,0.5)
-BOX_COLOR_LIGHT = (0.75,0.75,0.75)
-RADIUS = 10 
-BORDER = 0.2
-GRADUATION = 12
-TICK = 4
-
-visual.scene.title = "nf3d: 3D Netfilter visualization"
-visual.scene.width = 800
-visual.scene.height = 600
-visual.scene.forward = (0.25,-10.25,-10)
-visual.scene.autocenter = 1
 
 filters_list = { 'p': 'orig_l4_dport', 'd': 'orig_ip_daddr_str', 's': 'orig_ip_saddr_str', 'P': 'orig_l4_sport' }
 
@@ -66,16 +35,20 @@ class connobj():
     generic connections list related object
     """
 
+    def __init__(self, **kargs):
+        self.config = kargs['config']
+        self.color = self.icolor = self.config['colors']['base']
+
     def ordonate(self, index):
-        self.z = (3*RADIUS)*index
-        self.label.z = (3*RADIUS)*index
+        self.z = (3*self.config['display']['radius'])*index
+        self.label.z = (3*self.config['display']['radius'])*index
 
     def highlight(self):
-        self.color = self.icolor = HIGHLIGHT_COLOR
+        self.color = self.icolor = self.config['colors']['highlight']
         self.label.visible = 1
 
     def normal(self):
-        self.color = COLOR
+        self.color = self.config['colors']['base']
         self.label.visible = 0
 
     def set_level(self, level):
@@ -99,8 +72,8 @@ class packet(visual.sphere, connobj):
 
     def __init__(self, start, pckt, **kargs):
         visual.sphere.__init__(self, **kargs)
-        self.color = self.icolor = COLOR
-        self.radius = 1.5 * RADIUS
+        connobj.__init__(self, **kargs)
+        self.radius = 1.5 * self.config['display']['radius']
         self.pos.x = start
         self.obj = pckt
         self.set_label()
@@ -129,7 +102,7 @@ class packet(visual.sphere, connobj):
 
     def normal(self):
         connobj.normal(self)
-        self.radius = 1.5 * RADIUS
+        self.radius = 1.5 * self.config['display']['radius']
 
     def highlight(self):
         connobj.highlight(self)
@@ -143,9 +116,9 @@ class connection(visual.cylinder, connobj):
 
     def __init__(self, start, end, conn, **kargs):
         visual.cylinder.__init__(self, **kargs)
+        connobj.__init__(self, **kargs)
         self.pos = (start,0, 0)
-        self.color = self.icolor = COLOR
-        self.radius = RADIUS
+        self.radius = self.config['display']['radius']
         self.axis = (end - start,0,0)
         self.obj = conn
         self.set_label()
@@ -173,9 +146,9 @@ class connection(visual.cylinder, connobj):
     def normal(self):
         connobj.normal(self)
         if (self.obj["ct_event"] == 1):
-            self.color = self.icolor = COLOR_TCP
+            self.color = self.icolor = self.config['colors']['opened']
         elif (self.obj["ct_event"] == 4):
-            self.color = self.icolor = COLOR_UDP
+            self.color = self.icolor = self.config['colors']['closed']
 
 def conn_comp(x,y,criter):
     ret = cmp(x.obj[criter], y.obj[criter])
@@ -189,7 +162,8 @@ class connections():
     Connections list with visual elements
     """
 
-    def __init__(self, start, end, duration, **kargs):
+    def __init__(self, start, end, duration, config, **kargs):
+        self.config = config
         self.starttime = self.mintime = start
         self.endtime = self.maxtime = end
         if (self.endtime < self.starttime):
@@ -270,7 +244,7 @@ class connections():
             self.starttime = ctime - self.duration
             self.endtime = ctime
 
-        if DISPLAY_QUERY:
+        if int(self.config['debug']['query']) == 1:
             print strquery
         try:
             conns = self.pgconn.query(strquery).dictresult()
@@ -290,7 +264,7 @@ class connections():
         for elt in conns:
             if (elt["end"]):
                 if elt["start"]:
-                    conn = connection(max(0, elt["start"]-self.mintime), min(elt["end"]-self.mintime, self.duration), elt)
+                    conn = connection(max(0, elt["start"]-self.mintime), min(elt["end"]-self.mintime, self.duration),elt, config = self.config)
                     self.ctiddict[elt["_ct_id"]] = t
                     if self.adaptative:
                         maxtime = max(maxtime, elt["end"])
@@ -299,7 +273,7 @@ class connections():
                     continue
             else:
                 if elt["start"]:
-                    conn = connection(max(0,elt["start"]-self.mintime), self.endtime-self.mintime,elt)
+                    conn = connection(max(0,elt["start"]-self.mintime), self.endtime-self.mintime,elt, config = self.config)
                     self.ctiddict[elt["_ct_id"]] = int(t)
                 else:
                     print "No timestamp in connection, can't display !"
@@ -313,16 +287,16 @@ class connections():
         self.count = len(self.conns)
         print "Found %d connections" % (self.count)
         
-        if DISPLAY_PACKETS:
+        if int(self.config['display']['packets']) == 1:
             strquery = "SELECT oob_time_sec+oob_time_usec/1000000 AS timestamp, * FROM ulog  JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %f AND oob_time_sec < %f %s" % (self.starttime, self.endtime, query_filter)
 
-            if DISPLAY_QUERY:
+            if int(self.config['debug']['query']) == 1:
                 print strquery
             packetlist = self.pgconn.query(strquery).dictresult()
             for pckt in packetlist:
                 if pckt["timestamp"]:
                     if (self.ctiddict.has_key(pckt["_ct_id"])):
-                        np = packet(pckt["timestamp"] - self.mintime, pckt)
+                        np = packet(pckt["timestamp"] - self.mintime, pckt, config = self.config)
                         np.ordonate(self.ctiddict[pckt["_ct_id"]])
                         self.packets.append(np)
 
@@ -351,8 +325,8 @@ class connections():
             for obj in self.container.objects:
                 obj.visible = 0
         self.container = visual.frame()
-        field_length =  self.length() + 2*RADIUS
-        field_width = 3*RADIUS*self.count + 10
+        field_length =  self.length() + 2*self.config['display']['radius']
+        field_width = 3*self.config['display']['radius']*self.count + 10
         if (self.ordered):
             init = self.conns[0].obj[self.orderby]
             pborder = 0
@@ -361,19 +335,19 @@ class connections():
             for conn in self.conns:
                 if (init != conn.obj[self.orderby]):
                     if ((i % 2) == 1):
-                        bcolor = BOX_COLOR_LIGHT
+                        bcolor = self.config['colors']['box_light']
                     else:
-                        bcolor = BOX_COLOR
+                        bcolor = self.config['colors']['box']
 
                     if type(init) == (type(1)):
                         labeltext = self.orderby + "\n%d" % (init)
                     elif type(init) == (type('str')):
                         labeltext = self.orderby + "\n'%s'" % (init)
-                    visual.box(frame=self.container, pos=(field_length/2 - self.level, -(RADIUS+1), 3*RADIUS*t/2+RADIUS + pborder/2), \
-                             width = (3*RADIUS*t - pborder), length = field_length, height = 1, color = bcolor)
-                    visual.label(frame=self.container, pos = (RADIUS -self.level, 0,  3*RADIUS*t/2+RADIUS + pborder/2),\
-                        yoffset = 4*RADIUS, xoffset = -4* RADIUS,text = labeltext)
-                    pborder = 3*RADIUS*t+RADIUS
+                    visual.box(frame=self.container, pos=(field_length/2 - self.level, -(self.config['display']['radius']+1), 3*self.config['display']['radius']*t/2+self.config['display']['radius'] + pborder/2), \
+                             width = (3*self.config['display']['radius']*t - pborder), length = field_length, height = 1, color = bcolor)
+                    visual.label(frame=self.container, pos = (self.config['display']['radius'] -self.level, 0,  3*self.config['display']['radius']*t/2+self.config['display']['radius'] + pborder/2),\
+                        yoffset = 4*self.config['display']['radius'], xoffset = -4* self.config['display']['radius'],text = labeltext)
+                    pborder = 3*self.config['display']['radius']*t+self.config['display']['radius']
                     init = conn.obj[self.orderby]
                     i += 1
                 t += 1
@@ -383,25 +357,25 @@ class connections():
             elif type(init) == (type('str')):
                 labeltext = self.orderby + "\n'%s'" % (init)
             if ((i % 2) == 1):
-                bcolor = BOX_COLOR_LIGHT
+                bcolor = self.config['colors']['box_light']
             else:
-                bcolor = BOX_COLOR
-            visual.box(frame=self.container, pos=(field_length/2 - self.level, -(RADIUS+1), 3*RADIUS*t/2+RADIUS + pborder/2), \
-                     width = (3*RADIUS*t - pborder), length = field_length, height = 1, color = bcolor)
-            visual.label(frame=self.container, pos = (RADIUS - self.level, 0, 3*RADIUS*t/2+RADIUS + pborder/2),\
-                yoffset = 4*RADIUS, xoffset = -4* RADIUS, text = labeltext)
+                bcolor = self.config['colors']['box']
+            visual.box(frame=self.container, pos=(field_length/2 - self.level, -(self.config['display']['radius']+1), 3*self.config['display']['radius']*t/2+self.config['display']['radius'] + pborder/2), \
+                     width = (3*self.config['display']['radius']*t - pborder), length = field_length, height = 1, color = bcolor)
+            visual.label(frame=self.container, pos = (self.config['display']['radius'] - self.level, 0, 3*self.config['display']['radius']*t/2+self.config['display']['radius'] + pborder/2),\
+                yoffset = 4*self.config['display']['radius'], xoffset = -4* self.config['display']['radius'], text = labeltext)
         else:
-             visual.box(frame=self.container, pos = (field_length/2 - self.level, -(RADIUS+1),field_width/2), width = field_width, length = field_length, height = 1, color = BOX_COLOR)
+             visual.box(frame=self.container, pos = (field_length/2 - self.level, -(self.config['display']['radius']+1),field_width/2), width = field_width, length = field_length, height = 1, color = self.config['colors']['box'])
 
         desctext = 'From %s to %s\n' % (time.strftime("%H:%M:%S", time.localtime(self.starttime)), \
             time.strftime("%H:%M:%S", time.localtime(self.endtime)))
         desctext += self.build_str_filter(" and ", "Filtering on ")
-        visual.label(frame=self.container, pos = (field_length/2 - self.level, RADIUS+0.5,0), yoffset = 4*RADIUS, text = desctext)
-        for i in range(GRADUATION):
-            visual.curve(frame=self.container, pos=[(field_length/GRADUATION*i - self.level, -(RADIUS+1)+1,0), (field_length/GRADUATION*i - self.level,-(RADIUS+1)+1,field_width)])
-        for i in range(GRADUATION/TICK+1):
-            ctime = time.strftime("%H:%M:%S", time.localtime(self.mintime + field_length/GRADUATION*TICK*i))
-            visual.label(frame=self.container, pos=(field_length/GRADUATION*TICK*i - self.level, -(RADIUS+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*RADIUS)
+        visual.label(frame=self.container, pos = (field_length/2 - self.level, self.config['display']['radius']+0.5,0), yoffset = 4*self.config['display']['radius'], text = desctext)
+        for i in range(self.config['display']['graduation']):
+            visual.curve(frame=self.container, pos=[(field_length/self.config['display']['graduation']*i - self.level, -(self.config['display']['radius']+1)+1,0), (field_length/self.config['display']['graduation']*i - self.level,-(self.config['display']['radius']+1)+1,field_width)])
+        for i in range(self.config['display']['graduation']/self.config['display']['tick']+1):
+            ctime = time.strftime("%H:%M:%S", time.localtime(self.mintime + field_length/self.config['display']['graduation']*self.config['display']['tick']*i))
+            visual.label(frame=self.container, pos=(field_length/self.config['display']['graduation']*self.config['display']['tick']*i - self.level, -(self.config['display']['radius']+1)+1,0), text = '%s' % (ctime), border = 5, yoffset = 1.5*self.config['display']['radius'])
 
     def refresh(self):
         self.clear()
@@ -506,9 +480,9 @@ class connections():
     def move_time(self, s):
         self.mode = 'period'
         if (s == 'right'):
-            timeshift = TIME_STEP
+            timeshift = int(self.config['display']['time_step'])
         else:
-            timeshift = - TIME_STEP
+            timeshift = - int(self.config['display']['time_step'])
         self.starttime += timeshift
         self.endtime += timeshift
         self.refresh()
@@ -560,7 +534,7 @@ def main_loop(connlists):
                     connlist.toggle_adaptative()
                 elif (s == 'C'):
                     for connsl in connlists:
-                        connsl.set_level(connlist.length()+15*RADIUS)
+                        connsl.set_level(connlist.length()+15*self.config['display']['radius'])
                     newconns = connections(connlist.starttime, connlist.endtime, connlist.duration)
                     newconns.from_pgsql(connlist.pgconn)
                     newconns.plate()
@@ -571,7 +545,7 @@ def main_loop(connlists):
                         for connsl in connlists:
                             if (connsl == connlist):
                                 break
-                            connsl.set_level(-(connlist.length()+100*RADIUS))
+                            connsl.set_level(-(connlist.length()+100*self.config['display']['radius']))
                         connlists.remove(connlist)
                         connlist = connlists[0]
                     else:
@@ -634,12 +608,14 @@ left arrow: move time window left
 '?': display this help message
 ':': interactive filter
 """
+
 def main():
     start = 0
     end = 0
     duration = 600
+    configfile = "/etc/nf3d.conf"
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hs:e:d:", ["help", "start=", "end=", "duration="])
+        opts, args = getopt.getopt(sys.argv[1:], "hs:e:d:c:", ["help", "start=", "end=", "duration=", "config="])
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -659,12 +635,33 @@ def main():
             end = int(a)
         elif o in ("-d", "--duration"):
             duration = int(a)
+        elif o in ("-c", "--config"):
+            configfile = a
         else:
             assert False, "unhandled option"
 
+    if not os.path.exists(configfile):
+        print "Unable to read config file %s" % (configfile)
+        return
+
+
+    vdt = Validator()
+    cfgspec_filename = pkg_resources.resource_filename('nf3d', 'nf3dspec.conf')
+    nf3dconfig = ConfigObj(configfile, configspec = cfgspec_filename)
+    nf3dconfig.validate(vdt)
+
+
+    visual.scene.title = "nf3d: 3D Netfilter visualization"
+    visual.scene.width = int(nf3dconfig['display']['width'])
+    visual.scene.height =  int(nf3dconfig['display']['height'])
+    visual.scene.forward = (0.25,-10.25,-10)
+    visual.scene.autocenter = 1
+
     # Init connections list
-    pgcnx = pg.connect(DATABASE, HOST, PORT, None, None, LOGIN, PASSWORD)
-    connlist = connections(start, end, duration)
+    pgcnx = pg.connect(nf3dconfig['database']['database'], nf3dconfig['database']['host'], \
+            int(nf3dconfig['database']['port']), None, None, \
+            nf3dconfig['database']['login'], nf3dconfig['database']['password'])
+    connlist = connections(start, end, duration, nf3dconfig)
     connlist.from_pgsql(pgcnx)
     connlist.plate()
     connlists = []
