@@ -43,6 +43,7 @@ Global
  * 'r': refresh current connection table
  * down arrow: highlight next item
  * up arrow: highlight prev item
+ * 'w': dump information about highlighted object to stdout
  * '?': display help message
 
 Selection

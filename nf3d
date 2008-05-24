@@ -81,6 +81,15 @@ class connobj():
         self.pos.x = self.pos.x - level
         self.label.pos.x =  self.label.pos.x - level
 
+    def dumpinfo(self):
+        print "Object information:"
+        for k in self.obj.keys():
+            if type(self.obj[k]) == (type(1)):
+                print "\t* " + k + "=%d" % (self.obj[k])
+            elif type(self.obj[k]) == (type('str')):
+                print "\t* " + k + "='%s'" % (self.obj[k])
+
+
 
 class packet(visual.sphere, connobj):
     """
@@ -478,6 +487,10 @@ class connections():
         self.endtime += timeshift
         self.refresh()
 
+    def highlight_write(self):
+        for obj in self.objlist:
+            obj.dumpinfo()
+
 def main_loop(connlists):
     visual.rate(50)
 # Drag and drop loop
@@ -515,6 +528,8 @@ def main_loop(connlists):
                     connlist.switch_order()
                 elif (s == 'R'):
                     connlist.reset_filter()
+                elif (s == 'w'):
+                    connlist.highlight_write()
                 elif (s == 'a'):
                     connlist.toggle_adaptative()
                 elif (s == 'C'):
@@ -577,6 +592,7 @@ Keyboard shortcuts:\n
 'c': switch highlighted items to normal
 'l': toggle label fisplay on selected items
 'r': refresh datas
+'w': output information about object to sdtout
 down arrow: highlight next item
 up arrow: highlight prev item
 'd': highlight item with same original destination IP
