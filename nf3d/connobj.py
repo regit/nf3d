@@ -159,15 +159,15 @@ class connections():
 
     def __init__(self, start, end, duration, config, **kargs):
         self.config = config
-        self.starttime = self.mintime = start
-        self.endtime = self.maxtime = end
-        if (self.endtime < self.starttime):
-            print "End before beginning, exiting"
-            sys.exit(1)
+        self.starttime = start
+        self.endtime = end
         if (duration == 0):
             self.duration = config['setup']['duration']
         else:
             self.duration = duration
+        if (self.endtime and self.endtime < self.starttime):
+            print "End before beginning, exiting"
+            sys.exit(1)
         if (self.starttime and self.endtime):
             self.duration = self.endtime - self.starttime
         if (not self.starttime and not self.endtime):
@@ -176,6 +176,10 @@ class connections():
             self.mode = "period"
         if (not self.endtime and self.starttime and self.duration):
             self.endtime = self.starttime + self.duration
+
+        self.mintime = self.starttime
+        self.maxtime = self.endtime
+
         self.conns = []
         self.packets = []
         self.container = None
@@ -365,8 +369,8 @@ class connections():
         else:
              visual.box(frame=self.container, pos = (field_length/2 - self.level, -(self.config['display']['radius']+1),field_width/2), width = field_width, length = field_length, height = 1, color = self.config['colors']['box'])
 
-        desctext = 'From %s to %s\n' % (time.strftime("%H:%M:%S", time.localtime(self.starttime)), \
-            time.strftime("%H:%M:%S", time.localtime(self.endtime)))
+        desctext = 'From %s to %s\n' % (time.strftime("%F %H:%M:%S", time.localtime(self.starttime)), \
+            time.strftime("%F %H:%M:%S", time.localtime(self.endtime)))
         desctext += self.build_str_filter(" and ", "Filtering on ")
         visual.label(frame=self.container, pos = (field_length/2 - self.level, self.config['display']['radius']+0.5,0), yoffset = 4*self.config['display']['radius'], text = desctext)
         for i in range(self.config['display']['graduation']):

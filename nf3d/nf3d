@@ -69,6 +69,12 @@ def main_loop(connlists):
                     connlist.highlight_write()
                 elif (s == 'a'):
                     connlist.toggle_adaptative()
+                elif (s == 'z'):
+                    connlist.duration = connlist.duration/2
+                    connlist.refresh()
+                elif (s == 'Z'):
+                    connlist.duration = connlist.duration*2
+                    connlist.refresh()
                 elif (s == 'C'):
                     for connsl in connlists:
                         connsl.set_level(connlist.length()+15*self.config['display']['radius'])
