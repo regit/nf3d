@@ -149,7 +149,7 @@ left arrow: move time window left
 def main():
     start = 0
     end = 0
-    duration = 600
+    duration = 0
     configfile = "/etc/nf3d.conf"
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hs:e:d:c:", ["help", "start=", "end=", "duration=", "config="])
@@ -181,12 +181,10 @@ def main():
         print "Unable to read config file %s" % (configfile)
         return
 
-
     vdt = Validator()
     cfgspec_filename = pkg_resources.resource_filename('nf3d', 'nf3dspec.conf')
     nf3dconfig = ConfigObj(configfile, configspec = cfgspec_filename)
     nf3dconfig.validate(vdt)
-
 
     visual.scene.title = "nf3d: 3D Netfilter visualization"
     visual.scene.width = int(nf3dconfig['display']['width'])

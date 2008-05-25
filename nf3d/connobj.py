@@ -164,7 +164,10 @@ class connections():
         if (self.endtime < self.starttime):
             print "End before beginning, exiting"
             sys.exit(1)
-        self.duration = duration
+        if (duration == 0):
+            self.duration = config['setup']['duration']
+        else:
+            self.duration = duration
         if (self.starttime and self.endtime):
             self.duration = self.endtime - self.starttime
         if (not self.starttime and not self.endtime):
@@ -479,9 +482,9 @@ class connections():
     def move_time(self, s):
         self.mode = 'period'
         if (s == 'right'):
-            timeshift = int(self.config['display']['time_step'])
+            timeshift = int(self.config['setup']['time_step'])
         else:
-            timeshift = - int(self.config['display']['time_step'])
+            timeshift = - int(self.config['setup']['time_step'])
         self.starttime += timeshift
         self.endtime += timeshift
         self.refresh()
