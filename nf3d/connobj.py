@@ -121,8 +121,17 @@ class connection(visual.cylinder, connobj):
 
     def set_label(self):
         txtlabel = ''
-        if (self.obj["orig_ip_protocol"] in (6,17)):
-            txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.obj["orig_ip_saddr_str"], self.obj["orig_l4_sport"], self.obj["orig_ip_daddr_str"], self.obj["orig_l4_dport"])
+        if (self.config['display']['extended_label'] != 0):
+            if (self.obj["orig_ip_protocol"] in (6,17)):
+                txtlabel = 'ORIG SRC: %s:%d\n     DST: %s:%d\nREPL SRC: %s:%d\n     SRC: %s:%d\n' % (self.obj["orig_ip_saddr_str"], self.obj["orig_l4_sport"],  self.obj["orig_ip_daddr_str"], self.obj["orig_l4_dport"] ,\
+             self.obj["reply_ip_saddr_str"], self.obj["reply_l4_sport"],  self.obj["reply_ip_daddr_str"], self.obj["reply_l4_dport"])
+            else:
+                txtlabel = 'ORIG SRC: %s\tREPLY SRC: %s \nORIG DST: %s\tREPLY DST: %s\n' % (self.obj["orig_ip_saddr_str"],self.obj["reply_ip_saddr_str"],  self.obj["orig_ip_daddr_str"],  self.obj["reply_ip_daddr_str"])
+        else:
+            if (self.obj["orig_ip_protocol"] in (6,17)):
+                txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.obj["orig_ip_saddr_str"], self.obj["orig_l4_sport"], self.obj["orig_ip_daddr_str"], self.obj["orig_l4_dport"])
+            else:
+                txtlabel = 'SRC: %s\nDST: %s\n' % (self.obj["orig_ip_saddr_str"], self.obj["orig_ip_daddr_str"])
         if (self.obj["orig_ip_protocol"] == 6):
             txtlabel += 'PROTO: TCP'
         elif (self.obj["orig_ip_protocol"] == 17):
@@ -225,26 +234,29 @@ class connections():
     def from_pgsql(self, **kargs):
         if kargs.has_key('conn'):
             self.pgconn = kargs['conn']
+        fields_list = 'orig_ip_daddr_str, \
+            orig_ip_saddr_str, orig_l4_sport, \
+            orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
+            ct_event'
+        if (self.config['display']['extended_label'] != 0):
+            fields_list += ', reply_ip_daddr_str, \
+            reply_ip_saddr_str, reply_l4_sport, \
+            reply_l4_dport'
         # compute filter
         query_filter = self.build_str_filter(" AND ")
         # Build query
         if (self.mode == "period"):
             strquery = "SELECT _ct_id, flow_start_sec+flow_start_usec/1000000 AS start, \
-            flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str, \
-            orig_ip_saddr_str, orig_l4_sport, \
-            orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
-            ct_event FROM ulog2_ct WHERE ((flow_end_sec > %f AND flow_start_sec < %f) \
+            flow_end_sec+flow_end_usec/1000000 AS end,  %s FROM ulog2_ct WHERE ((flow_end_sec > %f AND flow_start_sec < %f) \
             OR \
             (flow_end_sec IS NULL AND flow_start_sec < %f)) %s\
-            ORDER BY flow_start_sec DESC" % ( self.starttime, self.endtime, self.endtime, query_filter) 
+            ORDER BY flow_start_sec DESC" % (fields_list, self.starttime, self.endtime, self.endtime, query_filter) 
         elif (self.mode == "duration"):
             ctime = time.time()
             strquery = "SELECT _ct_id, flow_start_sec+flow_start_usec/1000000 AS start, \
-            flow_end_sec+flow_end_usec/1000000 AS end, orig_ip_daddr_str,\
-            orig_ip_saddr_str, orig_l4_sport, \
-            orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
-            ct_event FROM ulog2_ct WHERE (flow_end_sec > %f OR flow_end_sec IS NULL) %s\
-            ORDER BY flow_start_sec DESC" % (ctime - self.duration, query_filter) 
+            flow_end_sec+flow_end_usec/1000000 AS end, %s \
+            FROM ulog2_ct WHERE (flow_end_sec > %f OR flow_end_sec IS NULL) %s\
+            ORDER BY flow_start_sec DESC" % (fields_list, ctime - self.duration, query_filter) 
             self.starttime = ctime - self.duration
             self.endtime = ctime
 
