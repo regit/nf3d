@@ -170,6 +170,8 @@ class connections():
             sys.exit(1)
         if (self.starttime and self.endtime):
             self.duration = self.endtime - self.starttime
+        if (not self.starttime and self.endtime):
+            self.starttime = self.endtime - self.duration
         if (not self.starttime and not self.endtime):
             self.mode = "duration"
         else:
