@@ -1,0 +1,8 @@
+0.3 (2008/05/27)
+ * SQL Query optimisation
+ * ICMP fix
+ * Bugfixes
+0.2 (2008/05/25)
+ * Configuration files and setup tools
+0.1 (2008/05/20)
+ * Initial release
