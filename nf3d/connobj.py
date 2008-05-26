@@ -304,15 +304,15 @@ class connections():
         print "Found %d connections" % (self.count)
         
         if int(self.config['display']['packets']) == 1:
-            strquery = "SELECT oob_time_sec+oob_time_usec/1000000 AS timestamp, * FROM ulog  JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %f AND oob_time_sec < %f %s" % (self.starttime, self.endtime, query_filter)
+            strquery = "SELECT oob_time_sec+oob_time_usec/1000000 AS time, * FROM ulog2 JOIN tcp on _id=_tcp_id JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol AND tcp_sport=orig_l4_sport AND tcp_dport=orig_l4_dport where oob_time_sec >= %f AND oob_time_sec < %f %s" % (self.starttime, self.endtime, query_filter)
 
             if int(self.config['debug']['query']) == 1:
                 print strquery
             packetlist = self.pgconn.query(strquery).dictresult()
             for pckt in packetlist:
-                if pckt["timestamp"]:
+                if pckt["time"]:
                     if (self.ctiddict.has_key(pckt["_ct_id"])):
-                        np = packet(pckt["timestamp"] - self.mintime, pckt, config = self.config)
+                        np = packet(float(pckt["time"]) - self.mintime, pckt, config = self.config)
                         np.ordonate(self.ctiddict[pckt["_ct_id"]])
                         self.packets.append(np)
 
