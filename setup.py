@@ -30,6 +30,7 @@ else:
 DESCRIPTION = "nf3d is a visualization tools for Netfilter firewalls"
 KEYWORDS = "network firewall"
 REQUIRES = ("")
+VERSION = "0.2"
 
 CLASSIFIERS = [
     "Development Status :: 4 - Beta",
@@ -48,7 +49,7 @@ if use_setuptools:
 
 setup(
     name='nf3d',
-    version='0.1',
+    version=VERSION,
     license='GPLv3',
     description=DESCRIPTION,
     classifiers=CLASSIFIERS,
