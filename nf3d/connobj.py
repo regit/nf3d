@@ -23,7 +23,7 @@ import sys
 import os
 import time
 
-filters_list = { 'p': 'orig_l4_dport', 'd': 'orig_ip_daddr_str', 's': 'orig_ip_saddr_str', 'P': 'orig_l4_sport' }
+filters_list = { 'p': 'orig_l4_dport', 'd': 'orig_ip_daddr_str', 's': 'orig_ip_saddr_str', 'P': 'orig_l4_sport', 'I': 'orig_ip_protocol'}
 
 class connobj():
     """
@@ -318,6 +318,7 @@ class connections():
                     if (self.ctiddict.has_key(pckt["_ct_id"])):
                         np = packet(float(pckt["time"]) - self.mintime, pckt, config = self.config)
                         np.ordonate(self.ctiddict[pckt["_ct_id"]])
+                        np.set_level(self.level)
                         self.packets.append(np)
 
 
