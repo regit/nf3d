@@ -246,15 +246,15 @@ class connections():
         query_filter = self.build_str_filter(" AND ")
         # Build query
         if (self.mode == "period"):
-            strquery = "SELECT _ct_id, flow_start_sec+flow_start_usec/1000000 AS start, \
-            flow_end_sec+flow_end_usec/1000000 AS end,  %s FROM ulog2_ct WHERE ((flow_end_sec > %f AND flow_start_sec < %f) \
+            strquery = "SELECT _ct_id, flow_start_sec+flow_start_usec*1.0/1000000 AS start, \
+            flow_end_sec+flow_end_usec*1.0/1000000 AS end,  %s FROM ulog2_ct WHERE ((flow_end_sec > %f AND flow_start_sec < %f) \
             OR \
             (flow_end_sec IS NULL AND flow_start_sec < %f)) %s\
             ORDER BY flow_start_sec DESC" % (fields_list, self.starttime, self.endtime, self.endtime, query_filter) 
         elif (self.mode == "duration"):
             ctime = time.time()
-            strquery = "SELECT _ct_id, flow_start_sec+flow_start_usec/1000000 AS start, \
-            flow_end_sec+flow_end_usec/1000000 AS end, %s \
+            strquery = "SELECT _ct_id, flow_start_sec+flow_start_usec*1.0/1000000 AS start, \
+            flow_end_sec+flow_end_usec*1.0/1000000 AS end, %s \
             FROM ulog2_ct WHERE (flow_end_sec > %f OR flow_end_sec IS NULL) %s\
             ORDER BY flow_start_sec DESC" % (fields_list, ctime - self.duration, query_filter) 
             self.starttime = ctime - self.duration
@@ -275,8 +275,6 @@ class connections():
             self.mintime = self.starttime
             self.maxtime = self.endtime
         maxtime = 0
-        #if self.ordered and self.orderby:
-        #    conns.sort(lambda x, y: conn_comp(x,y,self.orderby))
         for elt in conns:
             if (elt["end"]):
                 if elt["start"]:
