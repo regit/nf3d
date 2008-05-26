@@ -309,6 +309,8 @@ class connections():
             if int(self.config['debug']['query']) == 1:
                 print strquery
             packetlist = self.pgconn.query(strquery).dictresult()
+            strquery = "SELECT oob_time_sec+oob_time_usec/1000000 AS time, * FROM ulog2 JOIN udp on _id=_udp_id JOIN ulog2_ct ON ip_saddr_str=orig_ip_saddr_str AND ip_daddr_str=orig_ip_daddr_str AND ip_protocol=orig_ip_protocol AND udp_sport=orig_l4_sport AND udp_dport=orig_l4_dport where oob_time_sec >= %f AND oob_time_sec < %f %s" % (self.starttime, self.endtime, query_filter)
+            packetlist += self.pgconn.query(strquery).dictresult()
             for pckt in packetlist:
                 if pckt["time"]:
                     if (self.ctiddict.has_key(pckt["_ct_id"])):
