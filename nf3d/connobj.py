@@ -123,10 +123,14 @@ class connection(visual.cylinder, connobj):
         txtlabel = ''
         if (self.config['display']['extended_label'] != 0):
             if (self.obj["orig_ip_protocol"] in (6,17)):
-                txtlabel = 'ORIG SRC: %s:%d\n     DST: %s:%d\nREPL SRC: %s:%d\n     SRC: %s:%d\n' % (self.obj["orig_ip_saddr_str"], self.obj["orig_l4_sport"],  self.obj["orig_ip_daddr_str"], self.obj["orig_l4_dport"] ,\
+                txtlabel = 'ORIG SRC: %s:%d\n     DST: %s:%d\nREPL SRC: %s:%d\n     DST: %s:%d\n' % (self.obj["orig_ip_saddr_str"], self.obj["orig_l4_sport"],  self.obj["orig_ip_daddr_str"], self.obj["orig_l4_dport"] ,\
              self.obj["reply_ip_saddr_str"], self.obj["reply_l4_sport"],  self.obj["reply_ip_daddr_str"], self.obj["reply_l4_dport"])
+            elif (self.obj["orig_ip_protocol"] == 1):
+                txtlabel = 'ORIG SRC: %s\n     DST: %s\nREPL SRC: %s\n     DST: %s\nCODE: %d TYPE: %d\n' % (self.obj["orig_ip_saddr_str"], \
+                    self.obj["orig_ip_daddr_str"],  self.obj["reply_ip_saddr_str"],  \
+                    self.obj["reply_ip_daddr_str"], self.obj["icmp_code"], self.obj["icmp_type"])
             else:
-                txtlabel = 'ORIG SRC: %s\tREPLY SRC: %s \nORIG DST: %s\tREPLY DST: %s\n' % (self.obj["orig_ip_saddr_str"],self.obj["reply_ip_saddr_str"],  self.obj["orig_ip_daddr_str"],  self.obj["reply_ip_daddr_str"])
+                txtlabel = 'ORIG SRC: %s\n     DST: %s\nREPL SRC: %s\n     DST: %s\n' % (self.obj["orig_ip_saddr_str"],self.obj["reply_ip_saddr_str"],  self.obj["orig_ip_daddr_str"],  self.obj["reply_ip_daddr_str"])
         else:
             if (self.obj["orig_ip_protocol"] in (6,17)):
                 txtlabel = 'SRC: %s:%d\nDST: %s:%d\n' % (self.obj["orig_ip_saddr_str"], self.obj["orig_l4_sport"], self.obj["orig_ip_daddr_str"], self.obj["orig_l4_dport"])
@@ -237,7 +241,7 @@ class connections():
         fields_list = 'orig_ip_daddr_str, \
             orig_ip_saddr_str, orig_l4_sport, \
             orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
-            ct_event'
+            ct_event, icmp_code, icmp_type'
         if (self.config['display']['extended_label'] != 0):
             fields_list += ', reply_ip_daddr_str, \
             reply_ip_saddr_str, reply_l4_sport, \
