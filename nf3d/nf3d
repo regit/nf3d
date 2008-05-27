@@ -21,6 +21,7 @@ import getopt
 import sys
 import os
 import pg
+from string import join
 from configobj import ConfigObj
 from validate import Validator
 import pkg_resources
@@ -157,8 +158,10 @@ def main():
     end = 0
     duration = 0
     configfile = "/etc/nf3d.conf"
+    filter = {}
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hS:E:D:c:", ["help", "start=", "end=", "duration=", "config="])
+        options = "hS:E:D:c:" + ":".join(filters_list.keys()) + ":"  
+        opts, args = getopt.getopt(sys.argv[1:], options, ["help", "start=", "end=", "duration=", "config="])
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -180,6 +183,8 @@ def main():
             duration = int(a)
         elif o in ("-c", "--config"):
             configfile = a
+        elif o.strip('-') in filters_list.keys():
+            filter[filters_list[o.strip('-')]] = a
         else:
             assert False, "unhandled option"
 
@@ -203,6 +208,7 @@ def main():
             int(nf3dconfig['database']['port']), None, None, \
             nf3dconfig['database']['login'], nf3dconfig['database']['password'])
     connlist = connections(start, end, duration, nf3dconfig)
+    connlist.filter = filter
     connlist.build(conn = pgcnx)
     connlist.plate()
     connlists = []
