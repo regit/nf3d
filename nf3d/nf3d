@@ -127,7 +127,7 @@ def interactive_filter(connlist):
         print "Unknown key in command: %s" % (cmd)
 
 def usage():
-    print "nf3d [-h] [-s START] [-e END] [-d DURATION]\n"
+    print "nf3d [-h] [-S START] [-E END] [-D DURATION]\n"
 
 def help():
     print """
@@ -158,7 +158,7 @@ def main():
     duration = 0
     configfile = "/etc/nf3d.conf"
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hs:e:d:c:", ["help", "start=", "end=", "duration=", "config="])
+        opts, args = getopt.getopt(sys.argv[1:], "hS:E:D:c:", ["help", "start=", "end=", "duration=", "config="])
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -172,11 +172,11 @@ def main():
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
-        elif o in ("-s", "--start"):
+        elif o in ("-S", "--start"):
             start = int(a)
-        elif o in ("-e", "--end"):
+        elif o in ("-E", "--end"):
             end = int(a)
-        elif o in ("-d", "--duration"):
+        elif o in ("-D", "--duration"):
             duration = int(a)
         elif o in ("-c", "--config"):
             configfile = a
