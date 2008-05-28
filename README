@@ -5,8 +5,10 @@ nf3d
 Introduction
 ============
 
-nf3d is a Netfilter vizualisation tool. It displays connections and logged 
+nf3d is a Netfilter visualisation tool. It displays connections and logged 
 packets in a GANTT diagram fashion.
+
+Official page is http://software.inl.fr/nf3d
 
 Prerequisites
 =============
@@ -17,7 +19,7 @@ thus need a working ulogd2 setup to be able to use this tool.
 Installation
 ============
 
-nf3d is using visual python and pygresql as weel as other stadard modules. You will need them
+nf3d is using visual python and pygresql as well as other standard modules. You will need them
 to run this software.
 On debian, you can install them by typing ::
 

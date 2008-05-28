@@ -201,7 +201,7 @@ def main():
     visual.scene.width = int(nf3dconfig['display']['width'])
     visual.scene.height =  int(nf3dconfig['display']['height'])
     visual.scene.forward = (0.25,-10.25,-10)
-    visual.scene.autocenter = 1
+    #visual.scene.autocenter = 1
 
     # Init connections list
     pgcnx = pg.connect(nf3dconfig['database']['database'], nf3dconfig['database']['host'], \
