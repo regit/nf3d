@@ -25,7 +25,7 @@ import time
 
 filters_list = { 'p': 'orig_l4_dport', 'd': 'orig_ip_daddr_str', 's': 'orig_ip_saddr_str', 'P': 'orig_l4_sport', 'I': 'orig_ip_protocol'}
 
-class connobj():
+class connobj(object):
     """
     generic connections list related object
     """
@@ -165,7 +165,7 @@ def conn_comp(x,y,criter):
     else:
         return ret
 
-class connections():
+class connections(object):
     """
     Connections list with visual elements
     """
