@@ -70,6 +70,10 @@ def main_loop(connlists):
                     connlist.highlight_write()
                 elif (s == 'a'):
                     connlist.toggle_adaptative()
+                elif (s == 'q'):
+		    print "'q' key pressed, exiting"
+		    visual.scene.visible = 0
+		    break
                 elif (s == 'z'):
                     connlist.duration = connlist.duration/2
                     connlist.refresh()
@@ -104,6 +108,8 @@ def main_loop(connlists):
                 connlist.move_time(s)
             else:
                 print "Key pressed: %s" % (s)
+    print "Thanks for using nf3d"
+    sys.exit(1)
 
 def interactive_filter(connlist):
     print "Please give filter (key=value)"
@@ -158,10 +164,11 @@ def main():
     end = 0
     duration = 0
     configfile = "/etc/nf3d.conf"
+    fullscreen = 0
     filter = {}
     try:
-        options = "hS:E:D:c:" + ":".join(filters_list.keys()) + ":"  
-        opts, args = getopt.getopt(sys.argv[1:], options, ["help", "start=", "end=", "duration=", "config="])
+        options = "hS:E:D:c:f" + ":".join(filters_list.keys()) + ":"  
+        opts, args = getopt.getopt(sys.argv[1:], options, ["help", "start=", "end=", "duration=", "config=", "fullscreen"])
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -183,6 +190,8 @@ def main():
             duration = int(a)
         elif o in ("-c", "--config"):
             configfile = a
+	elif o in ("-f", "--fullscreen"):
+	    fullscreen = 1
         elif o.strip('-') in filters_list.keys():
             filter[filters_list[o.strip('-')]] = a
         else:
@@ -201,6 +210,7 @@ def main():
     visual.scene.width = int(nf3dconfig['display']['width'])
     visual.scene.height =  int(nf3dconfig['display']['height'])
     visual.scene.forward = (0.25,-10.25,-10)
+    visual.scene.fullscreen = fullscreen
     #visual.scene.autocenter = 1
 
     # Init connections list
