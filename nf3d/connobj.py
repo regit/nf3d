@@ -23,7 +23,7 @@ import sys
 import os
 import time
 
-filters_list = { 'p': 'orig_l4_dport', 'd': 'orig_ip_daddr_str', 's': 'orig_ip_saddr_str', 'P': 'orig_l4_sport', 'I': 'orig_ip_protocol'}
+filters_list = { 'p': 'orig_l4_dport', 'd': 'orig_ip_daddr_str', 's': 'orig_ip_saddr_str', 'P': 'orig_l4_sport', 'I': 'orig_ip_protocol', 'm': 'ct_mark'}
 
 class connobj(object):
     """
@@ -241,7 +241,7 @@ class connections(object):
         fields_list = 'orig_ip_daddr_str, \
             orig_ip_saddr_str, orig_l4_sport, \
             orig_l4_dport ,orig_raw_pktlen, reply_raw_pktlen, orig_ip_protocol,\
-            ct_event, icmp_code, icmp_type'
+            ct_event, icmp_code, icmp_type, ct_mark'
         if (self.config['display']['extended_label'] != 0):
             fields_list += ', reply_ip_daddr_str, \
             reply_ip_saddr_str, reply_l4_sport, \
