@@ -30,7 +30,7 @@ else:
 DESCRIPTION = "nf3d is a visualization tools for Netfilter firewalls"
 KEYWORDS = "network firewall"
 REQUIRES = ("")
-VERSION = "0.4"
+VERSION = "0.5"
 
 CLASSIFIERS = [
     "Development Status :: 4 - Beta",
