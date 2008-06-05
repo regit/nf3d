@@ -134,7 +134,10 @@ def interactive_filter(connlist):
         print "Unknown key in command: %s" % (cmd)
 
 def usage():
-    print "nf3d [-h] [-S START] [-E END] [-D DURATION]\n"
+    filters = ""
+    for k,v in filters_list.iteritems():
+        filters += "[-%s %s] " % (k,v.upper())
+    print "nf3d [-h] [-S START] [-E END] [-D DURATION] %s" % filters
 
 def help():
     print """
