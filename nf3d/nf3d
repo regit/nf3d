@@ -27,6 +27,7 @@ from validate import Validator
 import pkg_resources
 import visual
 
+from nf3d.infos import VERSION
 from nf3d.connobj import packet, connection, connections, filters_list
 
 def main_loop(connlists):
@@ -137,7 +138,10 @@ def usage():
     filters = ""
     for k,v in filters_list.iteritems():
         filters += "[-%s %s] " % (k,v.upper())
-    print "nf3d [-h] [-S START] [-E END] [-D DURATION] %s" % filters
+    print "nf3d [-hV] [-S START] [-E END] [-D DURATION] %s" % filters
+
+def version():
+    print "nf3d (%s)" % (VERSION)
 
 def help():
     print """
@@ -170,8 +174,8 @@ def main():
     fullscreen = 0
     filter = {}
     try:
-        options = "hS:E:D:c:f" + ":".join(filters_list.keys()) + ":"  
-        opts, args = getopt.getopt(sys.argv[1:], options, ["help", "start=", "end=", "duration=", "config=", "fullscreen"])
+        options = "VhS:E:D:c:f" + ":".join(filters_list.keys()) + ":"  
+        opts, args = getopt.getopt(sys.argv[1:], options, ["version", "help", "start=", "end=", "duration=", "config=", "fullscreen"])
     except getopt.GetoptError, err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -184,6 +188,9 @@ def main():
             verbose = True
         elif o in ("-h", "--help"):
             usage()
+            sys.exit()
+        elif o in ("-V", "--version"):
+            version()
             sys.exit()
         elif o in ("-S", "--start"):
             start = int(a)

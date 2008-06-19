@@ -27,10 +27,8 @@ else:
     from distutils.core import setup
     use_setuptools = False
 
-DESCRIPTION = "nf3d is a visualization tools for Netfilter firewalls"
-KEYWORDS = "network firewall"
 REQUIRES = ("")
-VERSION = "0.5"
+from nf3d.infos import VERSION, DESCRIPTION, KEYWORDS
 
 CLASSIFIERS = [
     "Development Status :: 4 - Beta",
