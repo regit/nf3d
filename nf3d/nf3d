@@ -147,7 +147,7 @@ def help():
     print """
 Keyboard shortcuts:\n
 'c': switch highlighted items to normal
-'l': toggle label fisplay on selected items
+'l': toggle label display on selected items
 'r': refresh datas
 'w': output information about object to sdtout
 down arrow: highlight next item
