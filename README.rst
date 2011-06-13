@@ -8,8 +8,6 @@ Introduction
 nf3d is a Netfilter visualisation tool. It displays connections and logged 
 packets in a GANTT diagram fashion.
 
-Official page is http://software.inl.fr/nf3d
-
 Prerequisites
 =============
 
