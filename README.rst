@@ -54,7 +54,7 @@ Selection
 ~~~~~~~~~
 
 Click on a selection to highlight it and you can now use selection feature. Pressing the
-following key will highlight all connections matching filter :
+following key will highlight all connections matching filter:
 
  * 'd': original destination IP
  * 's': original source IP
@@ -67,15 +67,18 @@ Connections lists handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can change the displayed time window with the following keys:
+
  * right arrow: move time window right
  * left arrow: move time window left
 
 You can modify the displayed connections by using filter:
+
  * 'F': only display highlighted connections
  * 'R': reset filter and display all connections in the time window
  * 'O': order connections by last filter
  * ':': interactive filter, give a filter with syntax 'key=value'
 
 You can also duplicate connections to be able to compare different time window or filter:
+
  * 'C': duplicate the selected table
  * 'D': delete the selected table
