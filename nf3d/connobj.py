@@ -282,7 +282,7 @@ class connections(object):
         for elt in conns:
             if (elt["end"]):
                 if elt["start"]:
-                    conn = connection(max(0, elt["start"]-self.mintime), min(elt["end"]-self.mintime, self.duration),elt, config = self.config)
+                    conn = connection(max(0, float(elt["start"])-self.mintime), min(float(elt["end"])-self.mintime, self.duration),elt, config = self.config)
                     self.ctiddict[elt["_ct_id"]] = t
                     if self.adaptative:
                         maxtime = max(maxtime, elt["end"])
