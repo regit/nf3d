@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Copyright(C) 2008 Eric Leblond
+Copyright(C) 2008,2013 Eric Leblond
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ from configobj import ConfigObj
 from validate import Validator
 import pkg_resources
 import visual
+from time import sleep
 
 from nf3d.infos import VERSION
 from nf3d.connobj import packet, connection, connections, filters_list
@@ -35,6 +36,7 @@ def main_loop(connlists):
 # Drag and drop loop
     connlist = connlists[0]
     while 1:
+        sleep(0.05)
         if visual.scene.mouse.events:
             c = visual.scene.mouse.getevent()
             if c.pick and hasattr(c.pick,"icolor"):   # pick up the object
