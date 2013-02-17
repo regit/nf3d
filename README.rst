@@ -73,6 +73,7 @@ You can change the displayed time window with the following keys:
 You can modify the displayed connections by using filter:
  * 'F': only display highlighted connections
  * 'R': reset filter and display all connections in the time window
+ * 'O': order connections by last filter
  * ':': interactive filter, give a filter with syntax 'key=value'
 
 You can also duplicate connections to be able to compare different time window or filter:
