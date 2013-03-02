@@ -14,6 +14,19 @@ Prerequisites
 nf3d is currently using ulogd2 pgsql output to read information. You will
 thus need a working ulogd2 setup to be able to use this tool.
 
+Ulogd2 needs to store the connection tracking entries into a Postgresql database.
+This can  be done by activating the following stack in ulogd.conf ::
+
+	stack=ct1:NFCT,ip2str1:IP2STR,pgsql2:PGSQL
+
+The INSERT_OR_REPLACE_CT procedure is the most interesting here as you will have information
+about the status of a connection (opened or close).
+
+For recent kernel, if you want to have bytes information, you need to activate connection
+accounting. It can be done via ::
+
+	echo "1"> /proc/sys/net/netfilter/nf_conntrack_acct
+
 Installation
 ============
 
