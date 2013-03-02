@@ -287,7 +287,7 @@ class connections(object):
                     if self.adaptative:
                         maxtime = max(maxtime, elt["end"])
                 else:
-                    print "No timestamp in connection, can't display !"
+                    print "No start timestamp in connection, can't display !"
                     continue
             else:
                 if elt["start"]:
