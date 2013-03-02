@@ -291,7 +291,7 @@ class connections(object):
                     continue
             else:
                 if elt["start"]:
-                    conn = connection(max(0,elt["start"]-self.mintime), self.endtime-self.mintime,elt, config = self.config)
+                    conn = connection(max(0,float(elt["start"])-self.mintime), self.endtime-self.mintime,elt, config = self.config)
                     self.ctiddict[elt["_ct_id"]] = int(t)
                 else:
                     print "No timestamp in connection, can't display !"
