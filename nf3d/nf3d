@@ -164,6 +164,7 @@ left arrow: move time window left
 'R': reset filter and display all connections in the time window
 'C': duplicate the selected connections list
 'D': delete the selected connections list
+'O': order display based on last selected item
 '?': display this help message
 ':': interactive filter
 """
