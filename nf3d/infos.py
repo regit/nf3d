@@ -1,5 +1,5 @@
 """
-Copyright(C) 2008 Eric Leblond
+Copyright(C) 2008,2013 Eric Leblond
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 """
 
-VERSION = "0.6"
+VERSION = "0.7"
 
 DESCRIPTION = "nf3d is a visualization tools for Netfilter firewalls"
 KEYWORDS = "network firewall"

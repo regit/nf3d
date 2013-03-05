@@ -1,3 +1,16 @@
+0.7 (2013/03/06)
+ * use include operator for network filter. (Eric Leblond)
+ * Add 'O' shortcut to help message. (Eric Leblond)
+ * Improve warning message. (Eric Leblond)
+ * Add information about ulogd2 settings. (Eric Leblond)
+ * Fix operand error. (Eric Leblond)
+ * Improve rst syntax. (Eric Leblond)
+ * Add information about 'O' key. (Eric Leblond)
+ * Fix timer issue (Eric Leblond)
+ * Fix operator issue. (Eric Leblond)
+ * Update mail and url. (Eric Leblond)
+ * Remove reference to official page (Eric Leblond)
+ * Rename README file. (Eric Leblond)
 0.6
  * Version display
 0.5 (2008/06/06)
