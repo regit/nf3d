@@ -230,6 +230,8 @@ class connections(object):
                     query_filter +=  sep 
             if type(self.filter[k]) == (type(1)):
                 query_filter += k + "=%d" % (self.filter[k])
+            elif 'addr' in k:
+                query_filter += k + " <<= '%s'" % (self.filter[k])
             elif type(self.filter[k]) == (type('str')):
                 query_filter += k + "='%s'" % (self.filter[k])
             i += 1
