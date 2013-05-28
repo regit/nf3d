@@ -1,3 +1,6 @@
+0.8 (2013/05/28)
+ * Remove useless env python (Eric Leblond)
+ * Update FSF address to fix #1 (Eric Leblond)
 0.7 (2013/03/06)
  * use include operator for network filter. (Eric Leblond)
  * Add 'O' shortcut to help message. (Eric Leblond)
