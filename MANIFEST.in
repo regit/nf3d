@@ -1,0 +1,5 @@
+include Changelog
+include COPYING
+include INSTALL
+include nf3d.conf
+include README.rst
